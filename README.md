@@ -191,11 +191,17 @@ For multi-line blocks, the extension searches the open document for the generate
 
 ```bash
 npm install
-npm test        # Compile + run 297 tests
+npm test        # Compile + run 416 tests
 npm run lint    # ESLint check
 npm run build   # Full build + staging
 npm run package # Create .vsix
 ```
+
+Before a release, `Scripts/smoke/run-smoke.ps1 -VsixPath <path-to-vsix>` installs the packaged
+`.vsix` into an isolated `--user-data-dir`/`--extensions-dir` and runs
+`Scripts/smoke/smokeTest.js` inside a real VS Code extension host to invoke both
+`singleLineComment` and `multiLineComment` and assert the document actually changed - a clean-profile
+install and command smoke, not just a build that compiles (FANCYCMNT-0027).
 
 ---
 
