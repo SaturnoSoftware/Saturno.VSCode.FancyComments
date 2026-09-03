@@ -15,8 +15,8 @@
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // -------------------------------------------------------------------------- //
 
+// -----------------------------------------------------------------------------
 import { CommentSyntax } from "../libs/Saturno.VSCodeKit/src/Types";
-
 export { CommentSyntax };
 
 //

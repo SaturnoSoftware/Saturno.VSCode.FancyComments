@@ -12,13 +12,13 @@
 </p>
 
 <p align="center">
-  <b>Insert perfectly formatted comment separators with one keystroke.</b> Language-aware, configurable, toggleable.
+  <b>Make source structure easy to scan with one command.</b> Language-aware, configurable, and toggleable.
   <br>
   <br>
 </p>
 
 
-**Saturno FancyComments** is a VS Code extension that generates consistently formatted single-line and multi-line comment separators. It reads your language's comment syntax automatically and fills to a configurable width. Press once to format, press again to undo.
+**Saturno FancyComments** creates consistent single-line and multi-line comment separators using the active language's comment syntax. It keeps source sections readable without hand-formatting borders.
 
 Maintained by [Saturno.Software](https://saturno.software/).
 
@@ -143,6 +143,7 @@ All settings are available in VS Code Settings UI under **Saturno FancyComments*
 |---------|-------|-------------|
 | `saturno-fancy-comments.singleLineComment` | Saturno: Single Line Comment | Format/toggle a single separator line |
 | `saturno-fancy-comments.multiLineComment` | Saturno: Multi Line Comment | Format/toggle a multi-line comment block |
+| `saturno-fancy-comments.about` | Saturno: About FancyComments | Show installed version and build information |
 
 ### Suggested Keybindings
 
@@ -191,7 +192,7 @@ For multi-line blocks, the extension searches the open document for the generate
 
 ```bash
 npm install
-npm test        # Compile + run 416 tests
+npm test        # Compile and run the test suite
 npm run lint    # ESLint check
 npm run build   # Full build + staging
 npm run package # Create .vsix
@@ -250,5 +251,5 @@ A: Build the `.vsix` with `npm run package`, then `code --install-extension __DI
 
 ---
 <p align="center">
-  <b>Made with <3 by Saturno.Software</b>
+  <b>Saturno.Software</b>
 </p>

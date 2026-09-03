@@ -84,8 +84,11 @@ function getExtensionConfig(): ExtensionConfig {
   };
 }
 
-
-async function executeMultiCursorSingleLine(editor: vscode.TextEditor, config: ExtensionConfig): Promise<void> {
+// -----------------------------------------------------------------------------
+async function executeMultiCursorSingleLine(
+  editor: vscode.TextEditor,
+  config: ExtensionConfig
+): Promise<void> {
   const syntax = getCommentSyntaxForEditor(editor);
   if (!syntax) {
     showError(`Saturno FancyComments: unsupported language "${editor.document.languageId}"`);
@@ -96,7 +99,11 @@ async function executeMultiCursorSingleLine(editor: vscode.TextEditor, config: E
   const replacements = lines.map((line) => {
     const lineText = editor.document.lineAt(line).text;
     const column = lineText.length - lineText.trimStart().length;
-    const parsed = parseFancyCommentLine(lineText, inferFancyCommentLineSyntax(lineText, config) ?? syntax, config);
+    const parsed = parseFancyCommentLine(
+      lineText,
+      inferFancyCommentLineSyntax(lineText, config) ?? syntax, config
+    );
+
     return {
       line,
       column,
@@ -112,6 +119,7 @@ async function executeMultiCursorSingleLine(editor: vscode.TextEditor, config: E
   });
 }
 
+// -----------------------------------------------------------------------------
 async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: ExtensionConfig): Promise<void> {
   const syntax = getCommentSyntaxForEditor(editor);
   if (!syntax) {
@@ -161,6 +169,7 @@ async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: Ex
     }
   });
 }
+
 // -----------------------------------------------------------------------------
 async function executeSingleLineComment(): Promise<void> {
   const editor = getActiveEditor();

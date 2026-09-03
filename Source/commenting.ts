@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------- //
+//                               *       +                                    //
+//                         '                  |                               //
+//                     ()    .-.,="``"=.    - o -                             //
+//                           '=/_       \\     |                              //
+//                        *   |  '=._    |                                    //
+//                             \\     `=./`,        '                         //
+//                          .   '=.__.=' `='      *                           //
+//                                                                            //
+//                                                                            //
+// File      : commenting.ts                                                  //
+// Project   : vscode-fancy-comments                                          //
+// Date      : 2026-08-27                                                     //
+// Copyright : Saturno Software - 2026                                        //
+// Author    : mateusdigital <hello@mateus.digital>                           //
+// -------------------------------------------------------------------------- //
+
+// !BUG: FANCYCMNT-B0001
 import { CommentSyntax } from "../libs/Saturno.VSCodeKit/src/Types";
 import {
   DEFAULT_CONFIG,
@@ -7,13 +25,16 @@ import {
   parseFancyCommentLine,
 } from "./formatting";
 
+// !BUG: FANCYCMNT-B0001
 export type CommentImplementation = "syntax" | "vscode";
 
+// -----------------------------------------------------------------------------
 export interface ResolvedCommentText {
   syntax: CommentSyntax;
   text: string;
 }
 
+// -----------------------------------------------------------------------------
 export interface FoundFancyCommentBlock {
   syntax: CommentSyntax;
   text: string;
@@ -21,10 +42,13 @@ export interface FoundFancyCommentBlock {
   lineCount: number;
 }
 
+
+// -----------------------------------------------------------------------------
 export function normalizeCommentImplementation(value: string | undefined): CommentImplementation {
   return value === "syntax" ? "syntax" : "vscode";
 }
 
+// -----------------------------------------------------------------------------
 export function createLineLikeCommentSyntax(token: string): CommentSyntax {
   return {
     singleLineStart: token,
@@ -35,6 +59,7 @@ export function createLineLikeCommentSyntax(token: string): CommentSyntax {
   };
 }
 
+// -----------------------------------------------------------------------------
 export function createBlockCommentSyntax(open: string, close: string): CommentSyntax {
   return {
     singleLineStart: open,
@@ -45,6 +70,7 @@ export function createBlockCommentSyntax(open: string, close: string): CommentSy
   };
 }
 
+// -----------------------------------------------------------------------------
 export function extractCommentedText(commentedText: string, originalText: string): ResolvedCommentText | null {
   const commented = commentedText.trim();
   const original = originalText.trim();
@@ -85,6 +111,7 @@ export function extractCommentedText(commentedText: string, originalText: string
   };
 }
 
+// -----------------------------------------------------------------------------
 export function inferFancyCommentLineSyntax(
   line: string,
   config: FormattingConfig = DEFAULT_CONFIG
@@ -114,6 +141,7 @@ export function inferFancyCommentLineSyntax(
   return parseFancyCommentLine(line, blockSyntax, config) !== null ? blockSyntax : null;
 }
 
+// -----------------------------------------------------------------------------
 export function inferFancyCommentBlockSyntax(
   lines: string[],
   config: FormattingConfig = DEFAULT_CONFIG
@@ -175,6 +203,8 @@ export function inferFancyCommentBlockSyntax(
   };
   return parseFancyCommentBlock(lines, syntax, config) !== null ? syntax : null;
 }
+
+// -----------------------------------------------------------------------------
 export function findFancyCommentBlockWithInferredSyntax(
   lines: string[],
   cursorLine: number,
@@ -209,6 +239,7 @@ export function findFancyCommentBlockWithInferredSyntax(
   return null;
 }
 
+// -----------------------------------------------------------------------------
 export function findFancyCommentBlockUsingKnownSyntaxFirst(
   lines: string[],
   cursorLine: number,
@@ -225,6 +256,7 @@ export function findFancyCommentBlockUsingKnownSyntaxFirst(
   return findFancyCommentBlockWithInferredSyntax(lines, cursorLine, config);
 }
 
+// -----------------------------------------------------------------------------
 function extractCommentedTextWithoutOriginal(commentedText: string): ResolvedCommentText | null {
   const lastSpace = commentedText.lastIndexOf(" ");
   if (lastSpace > 0) {

@@ -1,5 +1,11 @@
 # Changelog
 
+This file records user-facing changes by release.
+
+## Unreleased
+
+- Align the README with the current commands, installation paths, and test workflow.
+
 ## 3.0.0 - 2026-08-24
 
 - Add atomic multi-cursor formatting for distinct lines.
