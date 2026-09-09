@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { findFancyCommentBlock, buildCommentBlock, buildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../src/formatting";
+import { findFancyCommentBlock, buildCommentBlock, buildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../Source/formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",

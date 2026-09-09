@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { buildCommentLine, buildCommentBlock, parseFancyCommentLine, CommentSyntax, DEFAULT_CONFIG } from "../src/formatting";
+import { buildCommentLine, buildCommentBlock, parseFancyCommentLine, CommentSyntax, DEFAULT_CONFIG } from "../Source/formatting";
 
 describe("unknown and unusual language support", () => {
   it("handles language with no single-line comment syntax", () => {

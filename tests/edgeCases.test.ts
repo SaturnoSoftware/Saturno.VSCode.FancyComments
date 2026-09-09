@@ -10,7 +10,7 @@ import {
   CommentSyntax,
   FormattingConfig,
   DEFAULT_CONFIG,
-} from "../src/formatting";
+} from "../Source/formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
