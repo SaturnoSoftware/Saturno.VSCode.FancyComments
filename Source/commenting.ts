@@ -14,6 +14,7 @@
 // Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // -------------------------------------------------------------------------- //
+// SPDX-License-Identifier: GPL-3.0-only
 
 // !BUG: FANCYCMNT-B0001
 import { CommentSyntax } from "../libs/Saturno.VSCodeKit/src/Types";

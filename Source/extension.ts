@@ -14,6 +14,7 @@
 // Copyright : Saturno Software - 2024 - 2026                                 //
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // -------------------------------------------------------------------------- //
+// SPDX-License-Identifier: GPL-3.0-only
 
 import * as vscode from "vscode";
 import { getCommentSyntaxForEditor, getActiveEditor, showError } from "../libs/Saturno.VSCodeKit/src";
