@@ -9,15 +9,14 @@
 //                                                                            //
 //                                                                            //
 // File      : formatting.ts                                                  //
-// Project   : vscode-fancy-comments                                          //
+// Project   : Saturno.VSCode.FancyComments                                   //
 // Date      : 2026-05-19                                                     //
 // Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // -------------------------------------------------------------------------- //
-// SPDX-License-Identifier: GPL-3.0-only
 
 // -----------------------------------------------------------------------------
-import { CommentSyntax } from "../Libraries/Saturno.FancyLib/Source/Types";
+import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/Types";
 export { CommentSyntax };
 
 //
@@ -31,11 +30,13 @@ export interface FormattingConfig {
   separatorPrefixLength: number;
 }
 
+// -----------------------------------------------------------------------------
 export const DEFAULT_CONFIG: FormattingConfig = {
   lineWidth: 80,
   separatorChar: "-",
   separatorPrefixLength: 3,
 };
+
 
 //
 // BUILD FUNCTIONS

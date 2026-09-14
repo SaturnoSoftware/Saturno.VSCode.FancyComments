@@ -5,14 +5,14 @@
   "publisher": "SaturnoSoftware",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SaturnoSoftware/vscode-fancy-comments.git"
+    "url": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments.git"
   },
   "bugs": {
-    "url": "https://github.com/SaturnoSoftware/vscode-fancy-comments/issues"
+    "url": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments/issues"
   },
-  "homepage": "https://github.com/SaturnoSoftware/vscode-fancy-comments#readme",
+  "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
   "main": "./out/Source/extension.js",
-  "icon": "res/images/icon.png",
+  "icon": "Resources/images/icon.png",
   "version": "3.0.0",
   "build": 25,
   "license": "GPL-3.0-only",
@@ -103,7 +103,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint Source Libraries --ext ts",
-    "test": "npm run compile && tsc -p tests/tsconfig.json && node --test out/tests/*.test.js",
+    "test": "npm run compile && tsc -p tests/tsconfig.json && tsc -p Libraries/Saturno.VSCode.FancyLib/tests/tsconfig.json && node --test out/tests/*.test.js out/Libraries/Saturno.VSCode.FancyLib/tests/*.test.js",
     "build": "npm run lint && npm run compile && pwsh -NoLogo -NoProfile -File ./Scripts/build.ps1 -ProjectRoot . -BuildOutputDir __BUILD/_staging",
     "package": "pwsh -NoLogo -NoProfile -File ./Scripts/package-vsix.ps1",
     "vscode:prepublish": "npm run compile"
@@ -121,7 +121,7 @@
     "json5": "^2.2.3"
   },
   "vsce": {
-    "baseImagesUrl": "https://raw.githubusercontent.com/SaturnoSoftware/vscode-fancy-comments/main/"
+    "baseImagesUrl": "https://raw.githubusercontent.com/SaturnoSoftware/Saturno.VSCode.FancyComments/main/"
   },
   "saturno": {
     "cicd": {
@@ -133,7 +133,7 @@
           "out/Source/extension.js"
         ],
         "expectedDirectories": [
-          "out/libs"
+          "out/Libraries"
         ]
       },
       "release": {

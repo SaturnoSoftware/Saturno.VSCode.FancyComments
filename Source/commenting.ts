@@ -9,7 +9,7 @@
 //                                                                            //
 //                                                                            //
 // File      : commenting.ts                                                  //
-// Project   : vscode-fancy-comments                                          //
+// Project   : Saturno.VSCode.FancyComments                                   //
 // Date      : 2026-08-27                                                     //
 // Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 // !BUG: FANCYCMNT-B0001
-import { CommentSyntax } from "../Libraries/Saturno.FancyLib/Source/Types";
+import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/Types";
 import {
   DEFAULT_CONFIG,
   findFancyCommentBlock,
