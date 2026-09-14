@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import * as vscode from "vscode";
-import { getCommentSyntaxForEditor, getActiveEditor, showError } from "../Libraries/Saturno.FancyLib/src";
+import { getCommentSyntaxForEditor, getActiveEditor, showError } from "../Libraries/Saturno.FancyLib/Source";
 import {
   extractCommentedText,
   findFancyCommentBlockUsingKnownSyntaxFirst,

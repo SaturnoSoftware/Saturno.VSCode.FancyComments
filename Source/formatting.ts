@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 // -----------------------------------------------------------------------------
-import { CommentSyntax } from "../Libraries/Saturno.FancyLib/src/Types";
+import { CommentSyntax } from "../Libraries/Saturno.FancyLib/Source/Types";
 export { CommentSyntax };
 
 //
