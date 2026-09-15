@@ -50,6 +50,15 @@ export function normalizeCommentImplementation(value: string | undefined): Comme
 }
 
 // -----------------------------------------------------------------------------
+export function shouldUseVSCodeBlockComment(
+  implementation: CommentImplementation,
+  selectionIsEmpty: boolean,
+  syntax: CommentSyntax | null
+): boolean {
+  return implementation === "vscode" && selectionIsEmpty && syntax?.singleLineEnd !== "";
+}
+
+// -----------------------------------------------------------------------------
 export function createLineLikeCommentSyntax(token: string): CommentSyntax {
   return {
     singleLineStart: token,

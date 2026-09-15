@@ -9,6 +9,7 @@ import {
   inferFancyCommentBlockSyntax,
   inferFancyCommentLineSyntax,
   normalizeCommentImplementation,
+  shouldUseVSCodeBlockComment,
 } from "../Source/commenting";
 
 describe("normalizeCommentImplementation", () => {
@@ -19,6 +20,25 @@ describe("normalizeCommentImplementation", () => {
 
   it("keeps syntax mode when requested", () => {
     assert.strictEqual(normalizeCommentImplementation("syntax"), "syntax");
+  });
+});
+
+describe("shouldUseVSCodeBlockComment", () => {
+  const lineSyntax = createLineLikeCommentSyntax("//");
+  const blockSyntax = createBlockCommentSyntax("/*", "*/");
+
+  it("prefers resolved line-comment syntax over VS Code's block-comment action", () => {
+    assert.strictEqual(shouldUseVSCodeBlockComment("vscode", true, lineSyntax), false);
+  });
+
+  it("uses VS Code's block-comment action for block-only or unresolved syntaxes", () => {
+    assert.strictEqual(shouldUseVSCodeBlockComment("vscode", true, blockSyntax), true);
+    assert.strictEqual(shouldUseVSCodeBlockComment("vscode", true, null), true);
+  });
+
+  it("does not invoke VS Code's block-comment action for selections or syntax mode", () => {
+    assert.strictEqual(shouldUseVSCodeBlockComment("vscode", false, blockSyntax), false);
+    assert.strictEqual(shouldUseVSCodeBlockComment("syntax", true, blockSyntax), false);
   });
 });
 

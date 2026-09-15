@@ -23,6 +23,7 @@ import {
   findFancyCommentBlockUsingKnownSyntaxFirst,
   inferFancyCommentLineSyntax,
   normalizeCommentImplementation,
+  shouldUseVSCodeBlockComment,
 } from "./commenting";
 import { buildCommentLine, buildCommentBlock, getIndentColumn, parseFancyCommentLine, FormattingConfig, DEFAULT_CONFIG } from "./formatting";
 
@@ -267,7 +268,7 @@ async function executeMultiLineComment(): Promise<void> {
     return;
   }
 
-  if (config.commentImplementation === "vscode" && editor.selection.isEmpty) {
+  if (shouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolvedSyntax)) {
     const applied = await applyFancyMultiLineCommentViaVSCode(editor, line, column, lineText, config);
     if (applied) {
       return;
