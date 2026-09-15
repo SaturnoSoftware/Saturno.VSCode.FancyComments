@@ -3,8 +3,8 @@
 .github/**
 !.github/imgs/
 !.github/imgs/**
-src/**
-libs/**
+Source/**
+Libraries/**
 tests/**
 Scripts/**
 Saturno.CICD/**
@@ -21,3 +21,4 @@ __DIST/**
 **/*.ts
 **/.vscode-test.*
 out/tests/**
+out/Libraries/**/tests/**
