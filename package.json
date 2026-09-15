@@ -1,7 +1,7 @@
 {
   "name": "saturno-fancy-comments",
   "displayName": "Saturno FancyComments",
-  "description": "Insert formatted single-line and multi-line comment separators",
+  "description": "Create customized comments without formatting everything manually.",
   "publisher": "SaturnoSoftware",
   "repository": {
     "type": "git",
