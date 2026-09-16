@@ -61,8 +61,21 @@
       {
         "command": "saturno-fancy-comments.about",
         "title": "Saturno: About FancyComments"
+      },
+      {
+        "command": "saturno-fancy-comments.dev.reportBug",
+        "title": "Saturno DEV: Report Bug (Open Bug panel)",
+        "category": "Saturno DEV"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "saturno-fancy-comments.dev.reportBug",
+          "when": "saturnoFancyComments.devMode"
+        }
+      ]
+    },
     "configuration": {
       "title": "Saturno FancyComments",
       "properties": {

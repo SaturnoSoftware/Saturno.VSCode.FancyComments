@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": false
+  },
+  "//": "Production build. Source/dev is excluded here, so out/Source/dev never exists and the guarded require in extension.ts finds nothing to load - that is the dev/prod mechanism itself, not a runtime flag. `include` drops the base tsconfig's wholesale \"Libraries\" root: that pattern treats every file under the FancyLib submodule (its own tests included) as an entry point regardless of whether anything imports it, which is how FancyLib's dev-only Open Bug domain and its tests were leaking into every build before this file existed. Dropping it here relies on tsc's normal transitive dependency resolution instead - Source/extension.ts's two specific FancyLib imports still get compiled as dependencies, nothing else does.",
+  "include": ["Source"],
+  "exclude": ["node_modules", ".vscode-test", "Tests", "Source/dev"]
+}
