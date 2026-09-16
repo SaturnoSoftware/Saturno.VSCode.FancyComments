@@ -1,5 +1,6 @@
 param(
     [string]$ProjectRoot = (Split-Path $PSScriptRoot -Parent),
+    [string]$BuildOutputDir = (Join-Path $ProjectRoot "out/build"),
     # NOT under out/: `vscode:prepublish` runs `compile`, which deletes ./out
     # recursively. vsce triggers prepublish itself, so anything this script creates
     # under out/ is gone by the time vsce writes - see FANCYHDR-0037.
@@ -13,6 +14,18 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
 
 Write-Host "==> Packaging: $ReleaseName"
+
+# Packaged from the staged build output, not the live repo tree: that staged
+# package.json is already the environment-correct manifest (dev commands
+# stripped for a production build, `scripts` removed so vsce's own
+# vscode:prepublish lifecycle hook has nothing to try to recompile), and
+# `out/` there is already the environment-correct compiled JS. Packaging the
+# live tree instead would always ship the dev compile and the full dev
+# manifest, regardless of which environment was actually built.
+if (-not (Test-Path -LiteralPath $BuildOutputDir -PathType Container)) {
+    throw "No staged build output found at $BuildOutputDir. Run the build step first."
+}
+$BuildOutputDir = (Resolve-Path -LiteralPath $BuildOutputDir).ProviderPath
 
 # The artifact name comes from package.json, and the full file path goes to
 # `--out`.
@@ -35,7 +48,7 @@ Write-Host "==> Packaging: $ReleaseName"
 # Two changes remove the whole chain: package outside `out/` so prepublish cannot
 # delete the destination, and pass the full file path so the result does not
 # depend on whether a directory happens to exist.
-$ManifestPath = Join-Path $ProjectRoot "package.json"
+$ManifestPath = Join-Path $BuildOutputDir "package.json"
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
 if (-not $Manifest.name -or -not $Manifest.version) {
     throw "package.json must declare both `name` and `version` to build the .vsix name."
@@ -46,7 +59,7 @@ $ExpectedPath = Join-Path $PackageOutputDir $ExpectedName
 Remove-Item -LiteralPath $PackageOutputDir -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $PackageOutputDir | Out-Null
 
-Push-Location $ProjectRoot
+Push-Location $BuildOutputDir
 try {
     & npx vsce package --out "$ExpectedPath"
     if ($LASTEXITCODE -ne 0) { throw "vsce package failed." }
