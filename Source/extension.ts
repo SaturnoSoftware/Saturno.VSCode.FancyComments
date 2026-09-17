@@ -66,6 +66,7 @@ export function activate(context: vscode.ExtensionContext): void {
     dev.registerDevCommands(context, host);
   }
 
+
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "saturno-fancy-comments.singleLineComment",
