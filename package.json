@@ -13,8 +13,8 @@
   "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
   "main": "./out/Source/extension.js",
   "icon": "Resources/images/icon.png",
-  "version": "3.2.0",
-  "build": 29,
+  "version": "3.2.1",
+  "build": 30,
   "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.88.0"
