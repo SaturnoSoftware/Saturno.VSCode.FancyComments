@@ -16,7 +16,7 @@
 // -------------------------------------------------------------------------- //
 
 // -----------------------------------------------------------------------------
-import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/Types";
+import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
 export { CommentSyntax };
 
 //

@@ -91,13 +91,40 @@ describe("Production build isolation (FANCYCMNT-0053)", () => {
     fs.rmSync(buildOutputDir, { recursive: true, force: true });
   });
 
-  it("ships a manifest and output tree with no dev command, menu entry, setting, FancyLib test or Open Bug module", () => {
+  /**
+   * 2026-09-21: extension.ts moved to a single
+   * `import * as Fancy from ".../FancyLib/Source"` barrel, matching
+   * FancyHeader. That barrel re-exports the DevBugReport/DevBugReportPanel
+   * domain (VSCODEKIT-0018/0020), so those compiled files now land in a
+   * production build too. Known gap, accepted by Mateus on 2026-09-21 in
+   * favour of one import shape across the family, tracked by VSCODEKIT-0026.
+   *
+   * FancyHeader disabled this assertion wholesale. Here it is narrowed
+   * instead: the known FancyLib Open Bug output files are subtracted and
+   * everything else the contract checks - a dev command, menu entry or
+   * setting surviving in the manifest, a compiled FancyLib test, any other
+   * module leaking - still fails. Narrowing accepts exactly the gap that was
+   * accepted and keeps the coverage that has nothing to do with it. A NEW
+   * leak still breaks this test, which a blanket skip would not.
+   */
+  const KNOWN_BARREL_LEAK = /Saturno\.VSCode\.FancyLib[\\/]Source[\\/]DevBugReport/;
+
+  it("ships a manifest and output tree with no dev command, menu entry, setting or FancyLib test, and no leak beyond the accepted barrel one", () => {
     const violations = assertProductionBuildIsolation({
       packageJsonPath: path.join(buildOutputDir, "package.json"),
       outputDirectory: buildOutputDir,
       contract: fancyCommentsIsolationContract(),
     });
-    assert.deepEqual(violations, []);
+
+    const accepted = violations.filter(
+      (v) => v.kind === "output-file" && KNOWN_BARREL_LEAK.test(v.detail)
+    );
+    const unaccepted = violations.filter((v) => !accepted.includes(v));
+
+    assert.deepEqual(unaccepted, []);
+    // If this ever becomes empty the gap closed, and the narrowing above plus
+    // VSCODEKIT-0026 should go with it.
+    assert.ok(accepted.length > 0, "the accepted barrel leak is gone; close VSCODEKIT-0026 and restore the strict assertion");
   });
 
   it("removes the whole commandPalette group once its only entry (the dev command) is stripped", () => {

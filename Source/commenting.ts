@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 // !BUG: FANCYCMNT-B0001
-import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/Types";
+import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
 import {
   DEFAULT_CONFIG,
   findFancyCommentBlock,

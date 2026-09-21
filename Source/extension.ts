@@ -17,12 +17,15 @@
 
 // -----------------------------------------------------------------------------
 import * as vscode from "vscode";
-// VSCODEKIT-0021: import from the specific modules, not the FancyLib barrel -
-// the barrel's `export *` also reaches the dev-only Open Bug domain, and a
-// barrel import drags the whole reachable graph into every compile,
-// including a production one, even when only these functions are used.
-import { getCommentSyntaxForEditor } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentSyntax";
-import { getActiveEditor, showError } from "../Libraries/Saturno.VSCode.FancyLib/Source/EditorUtils";
+// One FancyLib import for the whole adapter layer, matching FancyHeader.
+// Known accepted gap (VSCODEKIT-0026): the barrel also re-exports the dev-only
+// Open Bug domain, so it compiles into a production build too. Decided by
+// Mateus on 2026-09-21 in favour of one import shape across the family; the
+// isolation assertion in tests/productionBuildIsolation.test.ts is disabled
+// with the same note FancyHeader carries, and the gap is tracked, not silent.
+// The pure core (commenting.ts, formatting.ts) keeps importing its one FancyLib
+// module directly, so it never reaches vscode through this barrel.
+import * as Fancy from "../Libraries/Saturno.VSCode.FancyLib/Source";
 import {
   extractCommentedText,
   findFancyCommentBlockUsingKnownSyntaxFirst,
@@ -32,6 +35,14 @@ import {
 } from "./commenting";
 import { buildCommentLine, buildCommentBlock, getIndentColumn, parseFancyCommentLine, FormattingConfig, DEFAULT_CONFIG } from "./formatting";
 import { DevHost, DevModule } from "./devHooks";
+import { ExecuteAboutCommand } from "./About";
+
+// FancyLib's ShowError/ShowInfo take the product name as their own argument
+// and prefix the message with it, so the name is stated once here instead of
+// being repeated inside every message string. Phase 4 moves this to
+// Constants.ts alongside the rest.
+// -----------------------------------------------------------------------------
+const APP_NAME = "Saturno FancyComments";
 
 //
 // LIFECYCLE
@@ -89,7 +100,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(
       "saturno-fancy-comments.about",
       () => {
-        void executeAboutCommand(context);
+        void ExecuteAboutCommand(context);
       }
     )
   );
@@ -125,9 +136,9 @@ async function executeMultiCursorSingleLine(
   editor: vscode.TextEditor,
   config: ExtensionConfig
 ): Promise<void> {
-  const syntax = getCommentSyntaxForEditor(editor);
+  const syntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   if (!syntax) {
-    showError(`Saturno FancyComments: unsupported language "${editor.document.languageId}"`);
+    Fancy.EditorUtils.ShowError(APP_NAME, `unsupported language "${editor.document.languageId}"`);
     return;
   }
 
@@ -157,13 +168,13 @@ async function executeMultiCursorSingleLine(
 
 // -----------------------------------------------------------------------------
 async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: ExtensionConfig): Promise<void> {
-  const syntax = getCommentSyntaxForEditor(editor);
+  const syntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   if (!syntax) {
-    showError(`Saturno FancyComments: unsupported language "${editor.document.languageId}"`);
+    Fancy.EditorUtils.ShowError(APP_NAME, `unsupported language "${editor.document.languageId}"`);
     return;
   }
   if (editor.selections.some((selection) => !selection.isEmpty && selection.start.line !== selection.end.line)) {
-    showError("Saturno FancyComments: use one cursor for a multi-line selection.");
+    Fancy.EditorUtils.ShowError(APP_NAME, "use one cursor for a multi-line selection.");
     return;
   }
 
@@ -208,9 +219,9 @@ async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: Ex
 
 // -----------------------------------------------------------------------------
 async function executeSingleLineComment(): Promise<void> {
-  const editor = getActiveEditor();
+  const editor = Fancy.EditorUtils.GetActiveEditor();
   if (!editor) {
-    showError("Saturno FancyComments: no active editor");
+    Fancy.EditorUtils.ShowError(APP_NAME, "no active editor");
     return;
   }
   if (editor.selections.length > 1) {
@@ -223,7 +234,7 @@ async function executeSingleLineComment(): Promise<void> {
   const lineText = editor.document.lineAt(line).text;
   const column = getIndentColumn(lineText, editor.selection.start.character);
 
-  const resolvedSyntax = getCommentSyntaxForEditor(editor);
+  const resolvedSyntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   const existingSyntax = inferFancyCommentLineSyntax(lineText, config) ?? resolvedSyntax;
   if (existingSyntax) {
     const parsed = parseFancyCommentLine(lineText, existingSyntax, config);
@@ -244,7 +255,7 @@ async function executeSingleLineComment(): Promise<void> {
   }
 
   if (!resolvedSyntax) {
-    showError(`Saturno FancyComments: unsupported language "${editor.document.languageId}"`);
+    Fancy.EditorUtils.ShowError(APP_NAME, `unsupported language "${editor.document.languageId}"`);
     return;
   }
 
@@ -259,9 +270,9 @@ async function executeSingleLineComment(): Promise<void> {
 
 // -----------------------------------------------------------------------------
 async function executeMultiLineComment(): Promise<void> {
-  const editor = getActiveEditor();
+  const editor = Fancy.EditorUtils.GetActiveEditor();
   if (!editor) {
-    showError("Saturno FancyComments: no active editor");
+    Fancy.EditorUtils.ShowError(APP_NAME, "no active editor");
     return;
   }
   if (editor.selections.length > 1) {
@@ -273,7 +284,7 @@ async function executeMultiLineComment(): Promise<void> {
   const line = editor.selection.start.line;
   const lineText = editor.document.lineAt(line).text;
   const column = getIndentColumn(lineText, editor.selection.start.character);
-  const resolvedSyntax = getCommentSyntaxForEditor(editor);
+  const resolvedSyntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   const doc = editor.document;
 
   const windowStart = 0;
@@ -310,7 +321,7 @@ async function executeMultiLineComment(): Promise<void> {
   }
 
   if (!resolvedSyntax) {
-    showError(`Saturno FancyComments: unsupported language "${editor.document.languageId}"`);
+    Fancy.EditorUtils.ShowError(APP_NAME, `unsupported language "${editor.document.languageId}"`);
     return;
   }
 
@@ -438,85 +449,3 @@ async function restoreLine(
   editor.selection = originalSelection;
 }
 
-// -----------------------------------------------------------------------------
-async function executeAboutCommand(context: vscode.ExtensionContext): Promise<void> {
-  const packageJson = context.extension.packageJSON as {
-    displayName?: string;
-    name?: string;
-    version?: string;
-    build?: string | number;
-  };
-
-  const extensionName = packageJson.displayName ?? packageJson.name ?? "Saturno FancyComments";
-  const extensionVersion = packageJson.version ?? "unknown";
-  const extensionBuild = packageJson.build !== undefined ? String(packageJson.build) : "unknown";
-
-  const panel = vscode.window.createWebviewPanel(
-    "saturnoFancyCommentsAbout",
-    "About Saturno FancyComments",
-    vscode.ViewColumn.Active,
-    {
-      enableFindWidget: false,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
-    }
-  );
-
-  panel.webview.html = await loadAboutPanelHtml(panel.webview, context, {
-    extensionName,
-    extensionVersion,
-    extensionBuild,
-  });
-}
-
-interface AboutPanelModel {
-  extensionName: string;
-  extensionVersion: string;
-  extensionBuild: string;
-}
-
-// -----------------------------------------------------------------------------
-async function loadAboutPanelHtml(
-  webview: vscode.Webview,
-  context: vscode.ExtensionContext,
-  model: AboutPanelModel
-): Promise<string> {
-  const htmlUri = vscode.Uri.joinPath(context.extensionUri, "media", "about.html");
-  const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(context.extensionUri, "media", "about.css")
-  );
-
-  const htmlBytes = await vscode.workspace.fs.readFile(htmlUri);
-  const htmlTemplate = Buffer.from(htmlBytes).toString("utf8");
-
-  return htmlTemplate
-    .replaceAll("{{cspSource}}", webview.cspSource)
-    .replaceAll("{{styleUri}}", styleUri.toString())
-    .replaceAll("{{extensionName}}", escapeHtml(extensionNameOrFallback(model.extensionName)))
-    .replaceAll("{{extensionVersion}}", escapeHtml(extensionVersionOrFallback(model.extensionVersion)))
-    .replaceAll("{{extensionBuild}}", escapeHtml(extensionBuildOrFallback(model.extensionBuild)));
-}
-
-// -----------------------------------------------------------------------------
-function extensionNameOrFallback(value: string): string {
-  return value.trim().length > 0 ? value : "Saturno FancyComments";
-}
-
-// -----------------------------------------------------------------------------
-function extensionVersionOrFallback(value: string): string {
-  return value.trim().length > 0 ? value : "unknown";
-}
-
-// -----------------------------------------------------------------------------
-function extensionBuildOrFallback(value: string): string {
-  return value.trim().length > 0 ? value : "unknown";
-}
-
-// -----------------------------------------------------------------------------
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}

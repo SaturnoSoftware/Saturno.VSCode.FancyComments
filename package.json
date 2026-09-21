@@ -12,8 +12,8 @@
   },
   "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
   "main": "./out/Source/extension.js",
-  "icon": "Resources/images/icon.png",
-  "version": "3.2.1",
+  "icon": "Resources/icons/icon.png",
+  "version": "3.3.0",
   "build": 32,
   "license": "GPL-3.0-only",
   "engines": {
@@ -143,7 +143,10 @@
         "stagingRoot": "__BUILD/_staging",
         "expectedFiles": [
           "package.json",
-          "out/Source/extension.js"
+          "out/Source/extension.js",
+          "Resources/AboutPage/about.html",
+          "Resources/AboutPage/about.css",
+          "Resources/icons/icon.png"
         ],
         "expectedDirectories": [
           "out/Libraries"
