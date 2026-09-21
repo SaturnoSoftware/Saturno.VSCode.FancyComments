@@ -9,7 +9,15 @@ rather than recorded at the time.
 ## 3.3.0 - 2026-09-21
 
 ### Fixed
-- The `Saturno: About FancyComments` command shipped without its page. `Source/extension.ts`
+- The dev-only Open Bug domain compiled into production builds. The extension's single
+  FancyLib barrel import reached `DevBugReport`/`DevBugReportPanel` through the library's
+  `Source/index.ts`, and a static re-export is a static dependency, so the store artifact
+  carried a bug-reporting domain it had no command to invoke. FancyLib 1.2.0 gives that domain
+  its own entry point (`Source/Debug`), which only `Source/dev/` imports and
+  `tsconfig.prod.json` excludes. `tests/productionBuildIsolation.test.ts` asserts it strictly
+  again, and a real production package now contains zero `DevBugReport` files
+  (VSCODEKIT-0026).
+- The `Saturno: About FancyComments` command shipped without its page. The extension
   read `media/about.html` and `media/about.css` from the installed extension, but
   `Scripts/build.ps1` never staged `media/` into the build output that `Scripts/package.ps1`
   turns into the `.vsix` - the only asset in the packaged artifact was
@@ -30,22 +38,33 @@ rather than recorded at the time.
   "Couldn't find task ${defaultBuildTask}".
 
 ### Changed
+- `Source/` is split by responsibility, matching FancyHeader: `Extension.ts` (activation and
+  command registration only), `Commands.ts` (the editor work behind the two commands),
+  `Config.ts` (the settings shape and its normalization, importing nothing from `vscode`),
+  `ConfigResolution.ts` (the `workspace.getConfiguration` adapter), `Constants.ts`, `About.ts`,
+  and the pure core in `Commenting.ts` and `Formatting.ts`. Settings coming from a hand-edited
+  `settings.json` are now clamped through `NormalizeConfig` instead of being trusted as read.
+- Naming follows the Saturno model decided 2026-09-21: `PascalCase` public functions,
+  `_PascalCase` internal ones, `PascalCase.ts` file names. No behaviour changed, and the
+  extension's command ids and configuration keys are untouched, since those are public
+  contract.
 - The About panel is now the full Saturno About experience - header card, Saturno Software
   publisher card, and a "More Software" grid (presskit.diy, Gosh, Fancy Header) - rendered
   from the shared template in `Saturno.VSCode.FancyLib` (`Source/AboutPage/`) through
-  `RenderAboutPage(template, data)`. The panel code moved out of `Source/extension.ts` into
-  its own `Source/About.ts`.
+  `RenderAboutPage(template, data)`. The panel code moved out of the extension entry point
+  into its own `Source/About.ts`.
 - `media/` is retired. The page template stages from FancyLib into
   `Resources/AboutPage/` on every build, and the extension's own icon plus every product icon
   now live together under `Resources/icons/`. `package.json`'s `"icon"` points at
   `Resources/icons/icon.png`.
-- Pins `Saturno.VSCode.FancyLib` 1.1.0 (`4e86eea`), which splits the shared modules per
-  domain. `Source/Types.ts`, `Source/CommentSyntax.ts` and `Source/CommentSyntaxCore.ts` are
-  gone from the library; `CommentSyntax` and the syntax resolver now live in `CommentUtils`,
-  and the editor-facing detection in `CommentDetection`.
-- `Source/extension.ts` now takes a single `import * as Fancy from ".../FancyLib/Source"`
-  barrel for its adapter layer, matching FancyHeader. The pure core (`commenting.ts`,
-  `formatting.ts`) still imports its one library module directly so it never reaches `vscode`.
+- Pins `Saturno.VSCode.FancyLib` 1.2.0 (`2d3de46`), which splits the shared modules per domain
+  and moves the dev-only domain behind `Source/Debug`. `Source/Types.ts`,
+  `Source/CommentSyntax.ts` and `Source/CommentSyntaxCore.ts` are gone from the library;
+  `CommentSyntax` and the syntax resolver now live in `CommentUtils`, and the editor-facing
+  detection in `CommentDetection`.
+- `Extension.ts` and `Commands.ts` take a single `import * as Fancy from ".../FancyLib/Source"`
+  barrel for the adapter layer, matching FancyHeader. The pure core (`Commenting.ts`,
+  `Formatting.ts`) still imports its one library module directly so it never reaches `vscode`.
 - `tests/commentSyntaxCore.test.ts` is removed: it duplicated coverage that now lives in
   FancyLib's own suite, which this repository's `npm test` already runs.
 - `tests/extensionAssets.test.ts` now asserts against the staged build output, not the

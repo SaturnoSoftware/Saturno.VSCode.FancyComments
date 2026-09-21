@@ -33,8 +33,8 @@ import {
   resolveDestinationDirectory,
   reserveReportFile,
   runOpenBugPanel,
-} from '../../Libraries/Saturno.VSCode.FancyLib/Source';
-import { DevHost } from '../devHooks';
+} from '../../Libraries/Saturno.VSCode.FancyLib/Source/Debug';
+import { DevHost } from '../DevHooks';
 
 const SECTION = 'saturno-fancy-comments';
 const GIT_IDENTITY_TIMEOUT_MS = 2000;

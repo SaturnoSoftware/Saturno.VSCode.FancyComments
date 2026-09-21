@@ -2,137 +2,56 @@
 //                               *       +                                    //
 //                         '                  |                               //
 //                     ()    .-.,="``"=.    - o -                             //
-//                           '=/_       \\     |                              //
+//                           '=/_       \     |                              //
 //                        *   |  '=._    |                                    //
-//                             \\     `=./`,        '                         //
+//                             \     `=./`,        '                         //
 //                          .   '=.__.=' `='      *                           //
 //                                                                            //
 //                                                                            //
-// File      : extension.ts                                                   //
+// File      : Commands.ts                                                    //
 // Project   : Saturno.VSCode.FancyComments                                   //
-// Date      : 2024-05-03                                                     //
-// Copyright : Saturno Software - 2024 - 2026                                 //
+// Date      : 2026-09-21                                                     //
+// Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
+// License   : GPLv3                                                          //
 // -------------------------------------------------------------------------- //
+// SPDX-License-Identifier: GPL-3.0-only
+
+/**
+ * The two commands the extension contributes, and the editor work they do.
+ *
+ * This is the adapter layer: it reads the editor state, calls the pure core
+ * in Commenting.ts and Formatting.ts, and applies the edit. Extension.ts only
+ * registers these; nothing here knows about activation.
+ */
 
 // -----------------------------------------------------------------------------
 import * as vscode from "vscode";
-// One FancyLib import for the whole adapter layer, matching FancyHeader.
-// Known accepted gap (VSCODEKIT-0026): the barrel also re-exports the dev-only
-// Open Bug domain, so it compiles into a production build too. Decided by
-// Mateus on 2026-09-21 in favour of one import shape across the family; the
-// isolation assertion in tests/productionBuildIsolation.test.ts is disabled
-// with the same note FancyHeader carries, and the gap is tracked, not silent.
-// The pure core (commenting.ts, formatting.ts) keeps importing its one FancyLib
-// module directly, so it never reaches vscode through this barrel.
+// -----------------------------------------------------------------------------
 import * as Fancy from "../Libraries/Saturno.VSCode.FancyLib/Source";
+import { APP_NAME } from "./Constants";
+import { ExtensionConfig } from "./Config";
+import { GetConfig } from "./ConfigResolution";
 import {
-  extractCommentedText,
-  findFancyCommentBlockUsingKnownSyntaxFirst,
-  inferFancyCommentLineSyntax,
-  normalizeCommentImplementation,
-  shouldUseVSCodeBlockComment,
-} from "./commenting";
-import { buildCommentLine, buildCommentBlock, getIndentColumn, parseFancyCommentLine, FormattingConfig, DEFAULT_CONFIG } from "./formatting";
-import { DevHost, DevModule } from "./devHooks";
-import { ExecuteAboutCommand } from "./About";
-
-// FancyLib's ShowError/ShowInfo take the product name as their own argument
-// and prefix the message with it, so the name is stated once here instead of
-// being repeated inside every message string. Phase 4 moves this to
-// Constants.ts alongside the rest.
-// -----------------------------------------------------------------------------
-const APP_NAME = "Saturno FancyComments";
-
-//
-// LIFECYCLE
-//
-
-/**
- * Loads `Source/dev/` if it was compiled into this build.
- *
- * A production build excludes that directory from its tsconfig, so
- * `out/Source/dev` does not exist and this require throws - the dev
- * commands are never registered. The production packaging step also strips
- * them from the manifest, so the function is not installed rather than
- * merely hidden.
- */
-// -----------------------------------------------------------------------------
-function loadDevModule(): DevModule | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require("./dev") as DevModule;
-  } catch {
-    return null;
-  }
-}
-
-// -----------------------------------------------------------------------------
-export function activate(context: vscode.ExtensionContext): void {
-  const dev = loadDevModule();
-  if (dev) {
-    const host: DevHost = {
-      extensionVersion: (context.extension?.packageJSON?.version as string) ?? "unknown",
-    };
-    dev.registerDevCommands(context, host);
-  }
-
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "saturno-fancy-comments.singleLineComment",
-      () => {
-        void executeSingleLineComment();
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "saturno-fancy-comments.multiLineComment",
-      () => {
-        void executeMultiLineComment();
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "saturno-fancy-comments.about",
-      () => {
-        void ExecuteAboutCommand(context);
-      }
-    )
-  );
-}
-
-// -----------------------------------------------------------------------------
-export function deactivate(): void { }
+  ExtractCommentedText,
+  FindFancyCommentBlockUsingKnownSyntaxFirst,
+  InferFancyCommentLineSyntax,
+  ShouldUseVSCodeBlockComment,
+} from "./Commenting";
+import {
+  BuildCommentBlock,
+  BuildCommentLine,
+  FormattingConfig,
+  GetIndentColumn,
+  ParseFancyCommentLine,
+} from "./Formatting";
 
 //
 // COMMANDS
 //
 
-interface ExtensionConfig extends FormattingConfig {
-  commentImplementation: "syntax" | "vscode";
-}
-
 // -----------------------------------------------------------------------------
-function getExtensionConfig(): ExtensionConfig {
-  const cfg = vscode.workspace.getConfiguration("saturno-fancy-comments");
-
-  return {
-    lineWidth: cfg.get<number>("lineWidth", DEFAULT_CONFIG.lineWidth),
-    separatorChar: cfg.get<string>("separatorChar", DEFAULT_CONFIG.separatorChar),
-    separatorPrefixLength: cfg.get<number>("separatorPrefixLength", DEFAULT_CONFIG.separatorPrefixLength),
-    commentImplementation: normalizeCommentImplementation(
-      cfg.get<string>("commentImplementation", "vscode")
-    ),
-  };
-}
-
-// -----------------------------------------------------------------------------
-async function executeMultiCursorSingleLine(
+async function _ExecuteMultiCursorSingleLine(
   editor: vscode.TextEditor,
   config: ExtensionConfig
 ): Promise<void> {
@@ -146,16 +65,16 @@ async function executeMultiCursorSingleLine(
   const replacements = lines.map((line) => {
     const lineText = editor.document.lineAt(line).text;
     const column = lineText.length - lineText.trimStart().length;
-    const parsed = parseFancyCommentLine(
+    const parsed = ParseFancyCommentLine(
       lineText,
-      inferFancyCommentLineSyntax(lineText, config) ?? syntax, config
+      InferFancyCommentLineSyntax(lineText, config) ?? syntax, config
     );
 
     return {
       line,
       column,
       lineText,
-      value: parsed?.text ?? buildCommentLine(syntax, lineText.trim(), config, column),
+      value: parsed?.text ?? BuildCommentLine(syntax, lineText.trim(), config, column),
     };
   });
 
@@ -167,7 +86,7 @@ async function executeMultiCursorSingleLine(
 }
 
 // -----------------------------------------------------------------------------
-async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: ExtensionConfig): Promise<void> {
+async function _ExecuteMultiCursorMultiLine(editor: vscode.TextEditor, config: ExtensionConfig): Promise<void> {
   const syntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   if (!syntax) {
     Fancy.EditorUtils.ShowError(APP_NAME, `unsupported language "${editor.document.languageId}"`);
@@ -183,8 +102,8 @@ async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: Ex
   const replacements: Array<{ range: vscode.Range; value: string }> = [];
   for (const line of [...new Set(editor.selections.map((selection) => selection.start.line))].sort((a, b) => a - b)) {
     const lineText = editor.document.lineAt(line).text;
-    const column = getIndentColumn(lineText, 0);
-    const found = findFancyCommentBlockUsingKnownSyntaxFirst(documentLines, line, syntax, config);
+    const column = GetIndentColumn(lineText, 0);
+    const found = FindFancyCommentBlockUsingKnownSyntaxFirst(documentLines, line, syntax, config);
     if (found) {
       const start = found.startLine;
       const end = start + found.lineCount - 1;
@@ -202,8 +121,8 @@ async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: Ex
     }
 
     const indent = lineText.match(/^\s*/)?.[0] ?? "";
-    const block = buildCommentBlock(syntax, indent, lineText.trim());
-    const separator = indent + buildCommentLine(syntax, "", config, indent.length);
+    const block = BuildCommentBlock(syntax, indent, lineText.trim());
+    const separator = indent + BuildCommentLine(syntax, "", config, indent.length);
     replacements.push({
       range: new vscode.Range(line, column, line, lineText.length),
       value: `${block}\n${separator}`,
@@ -218,26 +137,26 @@ async function executeMultiCursorMultiLine(editor: vscode.TextEditor, config: Ex
 }
 
 // -----------------------------------------------------------------------------
-async function executeSingleLineComment(): Promise<void> {
+export async function ExecuteSingleLineComment(): Promise<void> {
   const editor = Fancy.EditorUtils.GetActiveEditor();
   if (!editor) {
     Fancy.EditorUtils.ShowError(APP_NAME, "no active editor");
     return;
   }
   if (editor.selections.length > 1) {
-    await executeMultiCursorSingleLine(editor, getExtensionConfig());
+    await _ExecuteMultiCursorSingleLine(editor, GetConfig());
     return;
   }
 
-  const config = getExtensionConfig();
+  const config = GetConfig();
   const line = editor.selection.start.line;
   const lineText = editor.document.lineAt(line).text;
-  const column = getIndentColumn(lineText, editor.selection.start.character);
+  const column = GetIndentColumn(lineText, editor.selection.start.character);
 
   const resolvedSyntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
-  const existingSyntax = inferFancyCommentLineSyntax(lineText, config) ?? resolvedSyntax;
+  const existingSyntax = InferFancyCommentLineSyntax(lineText, config) ?? resolvedSyntax;
   if (existingSyntax) {
-    const parsed = parseFancyCommentLine(lineText, existingSyntax, config);
+    const parsed = ParseFancyCommentLine(lineText, existingSyntax, config);
     if (parsed !== null) {
       await editor.edit((editBuilder) => {
         const range = new vscode.Range(line, column, line, lineText.length);
@@ -248,7 +167,7 @@ async function executeSingleLineComment(): Promise<void> {
   }
 
   if (config.commentImplementation === "vscode") {
-    const applied = await applyFancySingleLineCommentViaVSCode(editor, line, column, lineText, config);
+    const applied = await _ApplyFancySingleLineCommentViaVSCode(editor, line, column, lineText, config);
     if (applied) {
       return;
     }
@@ -260,7 +179,7 @@ async function executeSingleLineComment(): Promise<void> {
   }
 
   const text = lineText.trim();
-  const commentLine = buildCommentLine(resolvedSyntax, text, config, column);
+  const commentLine = BuildCommentLine(resolvedSyntax, text, config, column);
 
   await editor.edit((editBuilder) => {
     const range = new vscode.Range(line, column, line, lineText.length);
@@ -269,21 +188,21 @@ async function executeSingleLineComment(): Promise<void> {
 }
 
 // -----------------------------------------------------------------------------
-async function executeMultiLineComment(): Promise<void> {
+export async function ExecuteMultiLineComment(): Promise<void> {
   const editor = Fancy.EditorUtils.GetActiveEditor();
   if (!editor) {
     Fancy.EditorUtils.ShowError(APP_NAME, "no active editor");
     return;
   }
   if (editor.selections.length > 1) {
-    await executeMultiCursorMultiLine(editor, getExtensionConfig());
+    await _ExecuteMultiCursorMultiLine(editor, GetConfig());
     return;
   }
 
-  const config = getExtensionConfig();
+  const config = GetConfig();
   const line = editor.selection.start.line;
   const lineText = editor.document.lineAt(line).text;
-  const column = getIndentColumn(lineText, editor.selection.start.character);
+  const column = GetIndentColumn(lineText, editor.selection.start.character);
   const resolvedSyntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
   const doc = editor.document;
 
@@ -294,7 +213,7 @@ async function executeMultiLineComment(): Promise<void> {
     windowLines.push(doc.lineAt(i).text);
   }
 
-  const found = findFancyCommentBlockUsingKnownSyntaxFirst(
+  const found = FindFancyCommentBlockUsingKnownSyntaxFirst(
     windowLines,
     line - windowStart,
     resolvedSyntax,
@@ -313,8 +232,8 @@ async function executeMultiLineComment(): Promise<void> {
     return;
   }
 
-  if (shouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolvedSyntax)) {
-    const applied = await applyFancyMultiLineCommentViaVSCode(editor, line, column, lineText, config);
+  if (ShouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolvedSyntax)) {
+    const applied = await _ApplyFancyMultiLineCommentViaVSCode(editor, line, column, lineText, config);
     if (applied) {
       return;
     }
@@ -331,8 +250,8 @@ async function executeMultiLineComment(): Promise<void> {
     ? new vscode.Range(line, column, line, lineText.length)
     : editor.selection;
 
-  const commentBlock = buildCommentBlock(resolvedSyntax, indent, text);
-  const commentLine = buildCommentLine(resolvedSyntax, "", config, column);
+  const commentBlock = BuildCommentBlock(resolvedSyntax, indent, text);
+  const commentLine = BuildCommentLine(resolvedSyntax, "", config, column);
 
   const fullComment = `${commentBlock}\n${indent}${commentLine}`;
 
@@ -350,7 +269,7 @@ async function executeMultiLineComment(): Promise<void> {
 }
 
 // -----------------------------------------------------------------------------
-async function applyFancySingleLineCommentViaVSCode(
+async function _ApplyFancySingleLineCommentViaVSCode(
   editor: vscode.TextEditor,
   line: number,
   column: number,
@@ -364,16 +283,16 @@ async function applyFancySingleLineCommentViaVSCode(
   await vscode.commands.executeCommand("editor.action.commentLine");
 
   const commentedLine = editor.document.lineAt(line).text;
-  const extracted = extractCommentedText(commentedLine.slice(column), originalLineText.slice(column));
+  const extracted = ExtractCommentedText(commentedLine.slice(column), originalLineText.slice(column));
 
   if (!extracted) {
-    await restoreLine(editor, line, originalLineText, originalSelection);
+    await _RestoreLine(editor, line, originalLineText, originalSelection);
     return false;
   }
 
   await vscode.commands.executeCommand("undo");
 
-  const commentLine = buildCommentLine(extracted.syntax, extracted.text, config, column);
+  const commentLine = BuildCommentLine(extracted.syntax, extracted.text, config, column);
 
   await editor.edit((editBuilder) => {
     editBuilder.replace(
@@ -387,7 +306,7 @@ async function applyFancySingleLineCommentViaVSCode(
 }
 
 // -----------------------------------------------------------------------------
-async function applyFancyMultiLineCommentViaVSCode(
+async function _ApplyFancyMultiLineCommentViaVSCode(
   editor: vscode.TextEditor,
   line: number,
   column: number,
@@ -402,10 +321,10 @@ async function applyFancyMultiLineCommentViaVSCode(
   await vscode.commands.executeCommand("editor.action.blockComment");
 
   const commentedLine = editor.document.lineAt(line).text;
-  const extracted = extractCommentedText(commentedLine.slice(column), originalLineText.slice(column));
+  const extracted = ExtractCommentedText(commentedLine.slice(column), originalLineText.slice(column));
 
   if (!extracted || extracted.syntax.singleLineEnd.length === 0) {
-    await restoreLine(editor, line, originalLineText, originalSelection);
+    await _RestoreLine(editor, line, originalLineText, originalSelection);
     return false;
   }
 
@@ -413,8 +332,8 @@ async function applyFancyMultiLineCommentViaVSCode(
 
   const text = extracted.text;
   const indent = " ".repeat(column);
-  const commentBlock = buildCommentBlock(extracted.syntax, indent, text);
-  const commentLine = buildCommentLine(extracted.syntax, "", config, column);
+  const commentBlock = BuildCommentBlock(extracted.syntax, indent, text);
+  const commentLine = BuildCommentLine(extracted.syntax, "", config, column);
   const fullComment = `${commentBlock}\n${indent}${commentLine}`;
 
   await editor.edit((editBuilder) => {
@@ -433,7 +352,7 @@ async function applyFancyMultiLineCommentViaVSCode(
 }
 
 // -----------------------------------------------------------------------------
-async function restoreLine(
+async function _RestoreLine(
   editor: vscode.TextEditor,
   line: number,
   originalLineText: string,

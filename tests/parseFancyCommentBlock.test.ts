@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { parseFancyCommentBlock, buildCommentBlock, buildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../Source/formatting";
+import { ParseFancyCommentBlock, BuildCommentBlock, BuildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../Source/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
@@ -35,98 +35,98 @@ const rawHashSyntax: CommentSyntax = {
 };
 
 function makeFullBlock(syntax: CommentSyntax, indent: string, text: string, config: FormattingConfig = DEFAULT_CONFIG): string[] {
-  const block = buildCommentBlock(syntax, indent, text);
-  const separator = indent + buildCommentLine(syntax, "", config);
+  const block = BuildCommentBlock(syntax, indent, text);
+  const separator = indent + BuildCommentLine(syntax, "", config);
   return [...block.split("\n"), separator];
 }
 
-describe("parseFancyCommentBlock", () => {
+describe("ParseFancyCommentBlock", () => {
   it("detects a full 4-line C-style block", () => {
     const lines = makeFullBlock(cStyleSyntax, "", "Section");
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.deepStrictEqual(result, { text: "Section", lineCount: 4 });
   });
 
   it("detects a 3-line block without trailing separator", () => {
-    const block = buildCommentBlock(cStyleSyntax, "", "Title");
+    const block = BuildCommentBlock(cStyleSyntax, "", "Title");
     const lines = block.split("\n");
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.deepStrictEqual(result, { text: "Title", lineCount: 3 });
   });
 
   it("detects HTML-style block", () => {
     const lines = makeFullBlock(htmlStyleSyntax, "", "Header");
-    const result = parseFancyCommentBlock(lines, htmlStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, htmlStyleSyntax);
     assert.deepStrictEqual(result, { text: "Header", lineCount: 4 });
   });
 
   it("detects hash-style block", () => {
     const lines = makeFullBlock(hashSyntax, "", "Module");
-    const result = parseFancyCommentBlock(lines, hashSyntax);
+    const result = ParseFancyCommentBlock(lines, hashSyntax);
     assert.deepStrictEqual(result, { text: "Module", lineCount: 4 });
   });
 
   it("detects block built from raw single-character markers", () => {
     const lines = makeFullBlock(rawHashSyntax, "", "Module");
-    const result = parseFancyCommentBlock(lines, rawHashSyntax);
+    const result = ParseFancyCommentBlock(lines, rawHashSyntax);
     assert.deepStrictEqual(result, { text: "Module", lineCount: 4 });
   });
 
   it("detects indented block", () => {
     const indent = "    ";
     const lines = makeFullBlock(cStyleSyntax, indent, "Deep");
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.deepStrictEqual(result, { text: "Deep", lineCount: 4 });
   });
 
   it("detects block with empty text", () => {
     const lines = makeFullBlock(cStyleSyntax, "", "");
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.deepStrictEqual(result, { text: "", lineCount: 4 });
   });
 
   it("returns null for regular code", () => {
     const lines = ["const x = 1;", "const y = 2;", "const z = 3;", ""];
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.strictEqual(result, null);
   });
 
   it("returns null when first line does not match", () => {
     const lines = ["// not a block start", "* content", "*/", "// ---"];
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.strictEqual(result, null);
   });
 
   it("returns null when middle line does not match", () => {
     const lines = ["/*", "no asterisk prefix", "*/", "// ---"];
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.strictEqual(result, null);
   });
 
   it("returns null when end line does not match", () => {
     const lines = ["/*", "* content", "not a close", "// ---"];
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.strictEqual(result, null);
   });
 
   it("returns null when fewer than 3 lines provided", () => {
-    const result = parseFancyCommentBlock(["/*", "* x"], cStyleSyntax);
+    const result = ParseFancyCommentBlock(["/*", "* x"], cStyleSyntax);
     assert.strictEqual(result, null);
   });
 
   it("returns 3 lines when 4th line is not a separator", () => {
-    const block = buildCommentBlock(cStyleSyntax, "", "Text");
+    const block = BuildCommentBlock(cStyleSyntax, "", "Text");
     const lines = [...block.split("\n"), "some other code"];
-    const result = parseFancyCommentBlock(lines, cStyleSyntax);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax);
     assert.deepStrictEqual(result, { text: "Text", lineCount: 3 });
   });
 });
 
-describe("parseFancyCommentBlock with custom config", () => {
+describe("ParseFancyCommentBlock with custom config", () => {
   it("detects block with custom separator config", () => {
     const config: FormattingConfig = { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4 };
     const lines = makeFullBlock(cStyleSyntax, "", "Custom", config);
-    const result = parseFancyCommentBlock(lines, cStyleSyntax, config);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax, config);
     assert.deepStrictEqual(result, { text: "Custom", lineCount: 4 });
   });
 
@@ -134,13 +134,13 @@ describe("parseFancyCommentBlock with custom config", () => {
     const buildConfig: FormattingConfig = { ...DEFAULT_CONFIG, separatorChar: "=" };
     const parseConfig: FormattingConfig = { ...DEFAULT_CONFIG, separatorChar: "-" };
     const lines = makeFullBlock(cStyleSyntax, "", "Mismatch", buildConfig);
-    const result = parseFancyCommentBlock(lines, cStyleSyntax, parseConfig);
+    const result = ParseFancyCommentBlock(lines, cStyleSyntax, parseConfig);
     // Block itself still matches (3 lines), but separator doesn't match parseConfig
     assert.deepStrictEqual(result, { text: "Mismatch", lineCount: 3 });
   });
 });
 
-describe("parseFancyCommentBlock roundtrip", () => {
+describe("ParseFancyCommentBlock roundtrip", () => {
   const texts = ["", "Title", "CONSTANTS", "hello-world"];
   const syntaxes = [cStyleSyntax, htmlStyleSyntax, hashSyntax];
 
@@ -148,7 +148,7 @@ describe("parseFancyCommentBlock roundtrip", () => {
     for (const text of texts) {
       it(`roundtrip: syntax=${syntax.singleLineStart} text="${text}"`, () => {
         const lines = makeFullBlock(syntax, "", text);
-        const parsed = parseFancyCommentBlock(lines, syntax);
+        const parsed = ParseFancyCommentBlock(lines, syntax);
         assert.notStrictEqual(parsed, null);
         assert.strictEqual(parsed!.text, text);
         assert.strictEqual(parsed!.lineCount, 4);
@@ -157,11 +157,11 @@ describe("parseFancyCommentBlock roundtrip", () => {
   }
 });
 
-describe("parseFancyCommentBlock multi-line release regressions", () => {
+describe("ParseFancyCommentBlock multi-line release regressions", () => {
   it("round-trips multi-line text and all opening indentation variants", () => {
     for (const indent of ["  ", "\t", " \t  "]) {
       const lines = makeFullBlock(cStyleSyntax, indent, "First\n  Second\n\tThird");
-      assert.deepStrictEqual(parseFancyCommentBlock(lines, cStyleSyntax), {
+      assert.deepStrictEqual(ParseFancyCommentBlock(lines, cStyleSyntax), {
         text: "First\n  Second\n\tThird",
         lineCount: 6,
       });
@@ -170,6 +170,6 @@ describe("parseFancyCommentBlock multi-line release regressions", () => {
 
   it("rejects a block whose opening delimiter uses a different indentation", () => {
     const lines = ["/*", "  * Title", "  */"];
-    assert.strictEqual(parseFancyCommentBlock(lines, cStyleSyntax), null);
+    assert.strictEqual(ParseFancyCommentBlock(lines, cStyleSyntax), null);
   });
 });

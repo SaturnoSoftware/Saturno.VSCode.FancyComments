@@ -20,11 +20,11 @@
 import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
 import {
   DEFAULT_CONFIG,
-  findFancyCommentBlock,
+  FindFancyCommentBlock,
   FormattingConfig,
-  parseFancyCommentBlock,
-  parseFancyCommentLine,
-} from "./formatting";
+  ParseFancyCommentBlock,
+  ParseFancyCommentLine,
+} from "./Formatting";
 
 // !BUG: FANCYCMNT-B0001
 export type CommentImplementation = "syntax" | "vscode";
@@ -45,12 +45,12 @@ export interface FoundFancyCommentBlock {
 
 
 // -----------------------------------------------------------------------------
-export function normalizeCommentImplementation(value: string | undefined): CommentImplementation {
+export function NormalizeCommentImplementation(value: string | undefined): CommentImplementation {
   return value === "syntax" ? "syntax" : "vscode";
 }
 
 // -----------------------------------------------------------------------------
-export function shouldUseVSCodeBlockComment(
+export function ShouldUseVSCodeBlockComment(
   implementation: CommentImplementation,
   selectionIsEmpty: boolean,
   syntax: CommentSyntax | null
@@ -59,7 +59,7 @@ export function shouldUseVSCodeBlockComment(
 }
 
 // -----------------------------------------------------------------------------
-export function createLineLikeCommentSyntax(token: string): CommentSyntax {
+export function CreateLineLikeCommentSyntax(token: string): CommentSyntax {
   return {
     singleLineStart: token,
     singleLineEnd: "",
@@ -70,7 +70,7 @@ export function createLineLikeCommentSyntax(token: string): CommentSyntax {
 }
 
 // -----------------------------------------------------------------------------
-export function createBlockCommentSyntax(open: string, close: string): CommentSyntax {
+export function CreateBlockCommentSyntax(open: string, close: string): CommentSyntax {
   return {
     singleLineStart: open,
     singleLineEnd: close,
@@ -81,7 +81,7 @@ export function createBlockCommentSyntax(open: string, close: string): CommentSy
 }
 
 // -----------------------------------------------------------------------------
-export function extractCommentedText(commentedText: string, originalText: string): ResolvedCommentText | null {
+export function ExtractCommentedText(commentedText: string, originalText: string): ResolvedCommentText | null {
   const commented = commentedText.trim();
   const original = originalText.trim();
 
@@ -90,7 +90,7 @@ export function extractCommentedText(commentedText: string, originalText: string
   }
 
   if (original.length === 0) {
-    return extractCommentedTextWithoutOriginal(commented);
+    return _ExtractCommentedTextWithoutOriginal(commented);
   }
 
   const bodyIndex = commented.indexOf(original);
@@ -115,14 +115,14 @@ export function extractCommentedText(commentedText: string, originalText: string
 
   return {
     syntax: suffix.length === 0
-      ? createLineLikeCommentSyntax(prefix)
-      : createBlockCommentSyntax(prefix, suffix),
+      ? CreateLineLikeCommentSyntax(prefix)
+      : CreateBlockCommentSyntax(prefix, suffix),
     text: original,
   };
 }
 
 // -----------------------------------------------------------------------------
-export function inferFancyCommentLineSyntax(
+export function InferFancyCommentLineSyntax(
   line: string,
   config: FormattingConfig = DEFAULT_CONFIG
 ): CommentSyntax | null {
@@ -135,8 +135,8 @@ export function inferFancyCommentLineSyntax(
   }
 
   const startToken = trimmed.slice(0, prefixIndex);
-  const lineSyntax = createLineLikeCommentSyntax(startToken);
-  if (parseFancyCommentLine(line, lineSyntax, config) !== null) {
+  const lineSyntax = CreateLineLikeCommentSyntax(startToken);
+  if (ParseFancyCommentLine(line, lineSyntax, config) !== null) {
     return lineSyntax;
   }
 
@@ -146,13 +146,13 @@ export function inferFancyCommentLineSyntax(
   }
 
   const endToken = trimmed.slice(lastSpace + 1);
-  const blockSyntax = createBlockCommentSyntax(startToken, endToken);
+  const blockSyntax = CreateBlockCommentSyntax(startToken, endToken);
 
-  return parseFancyCommentLine(line, blockSyntax, config) !== null ? blockSyntax : null;
+  return ParseFancyCommentLine(line, blockSyntax, config) !== null ? blockSyntax : null;
 }
 
 // -----------------------------------------------------------------------------
-export function inferFancyCommentBlockSyntax(
+export function InferFancyCommentBlockSyntax(
   lines: string[],
   config: FormattingConfig = DEFAULT_CONFIG
 ): CommentSyntax | null {
@@ -179,7 +179,7 @@ export function inferFancyCommentBlockSyntax(
       multiLineMiddle: "*",
       multiLineEnd: endToken,
     };
-    if (endIndex >= 2 && parseFancyCommentBlock(lines, syntax, config) !== null) {
+    if (endIndex >= 2 && ParseFancyCommentBlock(lines, syntax, config) !== null) {
       return syntax;
     }
     return null;
@@ -187,10 +187,10 @@ export function inferFancyCommentBlockSyntax(
 
   // Generated line-like blocks repeat the same marker on the opening, body,
   // and closing lines. This accepts `##Title` as well as `## Title`.
-  const lineLikeSyntax = createLineLikeCommentSyntax(startToken);
+  const lineLikeSyntax = CreateLineLikeCommentSyntax(startToken);
   if (lines[1].startsWith(indent + startToken)) {
     const endIndex = lines.findIndex((line, index) => index >= 2 && line === indent + startToken);
-    if (endIndex >= 2 && parseFancyCommentBlock(lines, lineLikeSyntax, config) !== null) {
+    if (endIndex >= 2 && ParseFancyCommentBlock(lines, lineLikeSyntax, config) !== null) {
       return lineLikeSyntax;
     }
   }
@@ -211,11 +211,11 @@ export function inferFancyCommentBlockSyntax(
     multiLineMiddle: middleToken,
     multiLineEnd: endToken,
   };
-  return parseFancyCommentBlock(lines, syntax, config) !== null ? syntax : null;
+  return ParseFancyCommentBlock(lines, syntax, config) !== null ? syntax : null;
 }
 
 // -----------------------------------------------------------------------------
-export function findFancyCommentBlockWithInferredSyntax(
+export function FindFancyCommentBlockWithInferredSyntax(
   lines: string[],
   cursorLine: number,
   config: FormattingConfig = DEFAULT_CONFIG
@@ -223,12 +223,12 @@ export function findFancyCommentBlockWithInferredSyntax(
   const searchStart = 0;
 
   for (let i = cursorLine; i >= searchStart; i--) {
-    const syntax = inferFancyCommentBlockSyntax(lines.slice(i), config);
+    const syntax = InferFancyCommentBlockSyntax(lines.slice(i), config);
     if (!syntax) {
       continue;
     }
 
-    const parsed = parseFancyCommentBlock(lines.slice(i), syntax, config);
+    const parsed = ParseFancyCommentBlock(lines.slice(i), syntax, config);
     if (!parsed) {
       continue;
     }
@@ -250,24 +250,24 @@ export function findFancyCommentBlockWithInferredSyntax(
 }
 
 // -----------------------------------------------------------------------------
-export function findFancyCommentBlockUsingKnownSyntaxFirst(
+export function FindFancyCommentBlockUsingKnownSyntaxFirst(
   lines: string[],
   cursorLine: number,
   syntax: CommentSyntax | null,
   config: FormattingConfig = DEFAULT_CONFIG
 ): FoundFancyCommentBlock | null {
   if (syntax) {
-    const found = findFancyCommentBlock(lines, cursorLine, syntax, config);
+    const found = FindFancyCommentBlock(lines, cursorLine, syntax, config);
     if (found !== null) {
       return { syntax, ...found };
     }
   }
 
-  return findFancyCommentBlockWithInferredSyntax(lines, cursorLine, config);
+  return FindFancyCommentBlockWithInferredSyntax(lines, cursorLine, config);
 }
 
 // -----------------------------------------------------------------------------
-function extractCommentedTextWithoutOriginal(commentedText: string): ResolvedCommentText | null {
+function _ExtractCommentedTextWithoutOriginal(commentedText: string): ResolvedCommentText | null {
   const lastSpace = commentedText.lastIndexOf(" ");
   if (lastSpace > 0) {
     const open = commentedText.slice(0, lastSpace).trimEnd();
@@ -275,14 +275,14 @@ function extractCommentedTextWithoutOriginal(commentedText: string): ResolvedCom
 
     if (open.length > 0 && close.length > 0) {
       return {
-        syntax: createBlockCommentSyntax(open, close),
+        syntax: CreateBlockCommentSyntax(open, close),
         text: "",
       };
     }
   }
 
   return {
-    syntax: createLineLikeCommentSyntax(commentedText),
+    syntax: CreateLineLikeCommentSyntax(commentedText),
     text: "",
   };
 }

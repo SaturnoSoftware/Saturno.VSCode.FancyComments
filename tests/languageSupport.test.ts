@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { buildCommentLine, buildCommentBlock, parseFancyCommentLine, CommentSyntax, DEFAULT_CONFIG } from "../Source/formatting";
+import { BuildCommentLine, BuildCommentBlock, ParseFancyCommentLine, CommentSyntax, DEFAULT_CONFIG } from "../Source/Formatting";
 
 describe("unknown and unusual language support", () => {
   it("handles language with no single-line comment syntax", () => {
@@ -11,7 +11,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "*",
       multiLineEnd: "*/",
     };
-    const result = buildCommentBlock(syntax, "", "Block Only Language");
+    const result = BuildCommentBlock(syntax, "", "Block Only Language");
     assert.ok(result.includes("Block Only Language"));
   });
 
@@ -23,7 +23,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "*>",
       multiLineEnd: "*>",
     };
-    const result = buildCommentLine(cobolSyntax, "COBOL Comment");
+    const result = BuildCommentLine(cobolSyntax, "COBOL Comment");
     assert.ok(result.includes("COBOL Comment"));
     assert.ok(result.startsWith("*>"));
   });
@@ -36,7 +36,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "C",
       multiLineEnd: "C",
     };
-    const result = buildCommentLine(fortranSyntax, "FORTRAN Comment");
+    const result = BuildCommentLine(fortranSyntax, "FORTRAN Comment");
     assert.ok(result.includes("FORTRAN Comment"));
     assert.ok(result.startsWith("C"));
   });
@@ -49,7 +49,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: ";;",
       multiLineEnd: ";;",
     };
-    const result = buildCommentLine(lispSyntax, "Lisp Comment");
+    const result = BuildCommentLine(lispSyntax, "Lisp Comment");
     assert.ok(result.includes("Lisp Comment"));
     assert.ok(result.startsWith(";;"));
   });
@@ -62,7 +62,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "\"",
       multiLineEnd: "\"",
     };
-    const result = buildCommentLine(vimSyntax, "Vim Comment");
+    const result = BuildCommentLine(vimSyntax, "Vim Comment");
     assert.ok(result.includes("Vim Comment"));
   });
 
@@ -74,7 +74,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "--",
       multiLineEnd: "]]",
     };
-    const result = buildCommentLine(luaSyntax, "Lua Comment");
+    const result = BuildCommentLine(luaSyntax, "Lua Comment");
     assert.ok(result.includes("Lua Comment"));
     assert.ok(result.startsWith("--"));
   });
@@ -87,7 +87,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: " ",
       multiLineEnd: "-}",
     };
-    const result = buildCommentLine(haskellSyntax, "Haskell Comment");
+    const result = BuildCommentLine(haskellSyntax, "Haskell Comment");
     assert.ok(result.includes("Haskell Comment"));
   });
 
@@ -99,7 +99,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "%",
       multiLineEnd: "%",
     };
-    const result = buildCommentLine(erlangSyntax, "Erlang Comment");
+    const result = BuildCommentLine(erlangSyntax, "Erlang Comment");
     assert.ok(result.includes("Erlang Comment"));
   });
 
@@ -111,7 +111,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "%",
       multiLineEnd: "%}",
     };
-    const result = buildCommentLine(matlabSyntax, "MATLAB Comment");
+    const result = BuildCommentLine(matlabSyntax, "MATLAB Comment");
     assert.ok(result.includes("MATLAB Comment"));
   });
 
@@ -123,7 +123,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "#",
       multiLineEnd: "#",
     };
-    const result = buildCommentLine(rSyntax, "R Comment");
+    const result = BuildCommentLine(rSyntax, "R Comment");
     assert.ok(result.includes("R Comment"));
     assert.ok(result.startsWith("## ---"));
   });
@@ -136,7 +136,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: ";",
       multiLineEnd: ";",
     };
-    const result = buildCommentLine(asmSyntax, "Assembly Comment");
+    const result = BuildCommentLine(asmSyntax, "Assembly Comment");
     assert.ok(result.includes("Assembly Comment"));
   });
 
@@ -148,7 +148,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: "REM",
       multiLineEnd: "REM",
     };
-    const result = buildCommentLine(batchSyntax, "Batch Comment");
+    const result = BuildCommentLine(batchSyntax, "Batch Comment");
     assert.ok(result.includes("Batch Comment"));
   });
 
@@ -160,7 +160,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: " ",
       multiLineEnd: "#>",
     };
-    const result = buildCommentLine(psSyntax, "PowerShell Comment");
+    const result = BuildCommentLine(psSyntax, "PowerShell Comment");
     assert.ok(result.includes("PowerShell Comment"));
     assert.ok(result.startsWith("## ---"));
   });
@@ -173,7 +173,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: " ",
       multiLineEnd: ")",
     };
-    const result = buildCommentLine(clojureSyntax, "Clojure Comment");
+    const result = BuildCommentLine(clojureSyntax, "Clojure Comment");
     assert.ok(result.includes("Clojure Comment"));
   });
 
@@ -185,7 +185,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: " ",
       multiLineEnd: "\"\"\"",
     };
-    const result = buildCommentLine(elixirSyntax, "Elixir Comment");
+    const result = BuildCommentLine(elixirSyntax, "Elixir Comment");
     assert.ok(result.includes("Elixir Comment"));
     assert.ok(result.startsWith("## ---"));
   });
@@ -198,7 +198,7 @@ describe("unknown and unusual language support", () => {
       multiLineMiddle: " *",
       multiLineEnd: "*)",
     };
-    const result = buildCommentLine(symmetricSyntax, "Symmetric");
+    const result = BuildCommentLine(symmetricSyntax, "Symmetric");
     assert.ok(result.includes("Symmetric"));
     assert.ok(result.startsWith("(*"));
     assert.ok(result.endsWith("*)"));
@@ -214,7 +214,7 @@ describe("language detection fallback scenarios", () => {
       multiLineMiddle: "*",
       multiLineEnd: "*/",
     };
-    const result = buildCommentLine(unknownSyntax, "Unknown Language");
+    const result = BuildCommentLine(unknownSyntax, "Unknown Language");
     assert.ok(result.includes("Unknown Language"));
   });
 
@@ -226,7 +226,7 @@ describe("language detection fallback scenarios", () => {
       multiLineMiddle: " *",
       multiLineEnd: "*)",
     };
-    const block = buildCommentBlock(blockOnlySyntax, "", "Block Only");
+    const block = BuildCommentBlock(blockOnlySyntax, "", "Block Only");
     assert.ok(block.includes("Block Only"));
   });
 
@@ -238,7 +238,7 @@ describe("language detection fallback scenarios", () => {
       multiLineMiddle: "*",
       multiLineEnd: "*/",
     };
-    const result = buildCommentLine(nestingSyntax, "Nested /* comment */ inside");
+    const result = BuildCommentLine(nestingSyntax, "Nested /* comment */ inside");
     assert.ok(result.includes("Nested /* comment */ inside"));
   });
 });
@@ -252,13 +252,13 @@ describe("multi-language workspace scenarios", () => {
     ];
 
     for (const syntax of syntaxes) {
-      const result = buildCommentBlock(syntax, "", "Multi-Lang");
+      const result = BuildCommentBlock(syntax, "", "Multi-Lang");
       assert.ok(result.includes("Multi-Lang"));
     }
   });
 
   it("parses comment from wrong language syntax returns null", () => {
-    const cStyleLine = buildCommentLine(
+    const cStyleLine = BuildCommentLine(
       { singleLineStart: "//", singleLineEnd: "", multiLineStart: "/*", multiLineMiddle: "*", multiLineEnd: "*/" },
       "C Style"
     );
@@ -271,7 +271,7 @@ describe("multi-language workspace scenarios", () => {
       multiLineEnd: "\"\"\"",
     };
 
-    const result = parseFancyCommentLine(cStyleLine, pythonSyntax);
+    const result = ParseFancyCommentLine(cStyleLine, pythonSyntax);
     assert.strictEqual(result, null);
   });
 });
@@ -285,7 +285,7 @@ describe("language-specific formatting quirks", () => {
       multiLineMiddle: "#",
       multiLineEnd: "#",
     };
-    const result = buildCommentLine(spaceSensitiveSyntax, "Python Indent Matters");
+    const result = BuildCommentLine(spaceSensitiveSyntax, "Python Indent Matters");
     assert.ok(result.startsWith("## ---"));
   });
 
@@ -298,7 +298,7 @@ describe("language-specific formatting quirks", () => {
       multiLineEnd: "#",
     };
 
-    const block = buildCommentBlock(syntax, "", "Section");
+    const block = BuildCommentBlock(syntax, "", "Section");
     assert.deepStrictEqual(block.split("\n"), ["##", "## Section", "##"]);
   });
 
@@ -310,7 +310,7 @@ describe("language-specific formatting quirks", () => {
       multiLineMiddle: "REM",
       multiLineEnd: "REM",
     };
-    const result = buildCommentLine(caseSensitiveSyntax, "Case Matters");
+    const result = BuildCommentLine(caseSensitiveSyntax, "Case Matters");
     assert.ok(result.includes("REM"));
     assert.ok(!result.includes("rem"));
   });
@@ -323,7 +323,7 @@ describe("language-specific formatting quirks", () => {
       multiLineMiddle: "*>",
       multiLineEnd: "*>",
     };
-    const result = buildCommentLine(syntax, "COBOL needs space");
+    const result = BuildCommentLine(syntax, "COBOL needs space");
     assert.ok(result.includes("*> ---"));
   });
 });
@@ -337,7 +337,7 @@ describe("regex and pattern-based language parsing", () => {
       multiLineMiddle: "(*)",
       multiLineEnd: "(*)",
     };
-    const result = buildCommentLine(regexSyntax, "Regex Special");
+    const result = BuildCommentLine(regexSyntax, "Regex Special");
     assert.ok(result.includes("Regex Special"));
   });
 
@@ -349,7 +349,7 @@ describe("regex and pattern-based language parsing", () => {
       multiLineMiddle: "\\",
       multiLineEnd: "*\\",
     };
-    const result = buildCommentLine(backslashSyntax, "Backslash");
+    const result = BuildCommentLine(backslashSyntax, "Backslash");
     assert.ok(result.includes("Backslash"));
   });
 
@@ -361,7 +361,7 @@ describe("regex and pattern-based language parsing", () => {
       multiLineMiddle: "$*",
       multiLineEnd: "*/$",
     };
-    const result = buildCommentLine(dollarSyntax, "Dollar");
+    const result = BuildCommentLine(dollarSyntax, "Dollar");
     assert.ok(result.includes("Dollar"));
   });
 });

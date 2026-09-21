@@ -1,12 +1,12 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import {
-  buildCommentBlock,
-  buildCommentLine,
+  BuildCommentBlock,
+  BuildCommentLine,
   CommentSyntax,
-  parseFancyCommentBlock,
-  parseFancyCommentLine,
-} from "../Source/formatting";
+  ParseFancyCommentBlock,
+  ParseFancyCommentLine,
+} from "../Source/Formatting";
 
 interface LanguageFixture {
   name: string;
@@ -120,24 +120,24 @@ const languages: LanguageFixture[] = [
 describe("language comment coverage", () => {
   for (const language of languages) {
     it(`roundtrips single-line comments for ${language.name}`, () => {
-      const line = buildCommentLine(language.syntax, "Section");
-      const parsed = parseFancyCommentLine(line, language.syntax);
+      const line = BuildCommentLine(language.syntax, "Section");
+      const parsed = ParseFancyCommentLine(line, language.syntax);
 
       assert.strictEqual(line.length, 80);
       assert.deepStrictEqual(parsed, { text: "Section" });
     });
 
     it(`roundtrips multi-line comments for ${language.name}`, () => {
-      const block = buildCommentBlock(language.syntax, "", "Section");
-      const separator = buildCommentLine(language.syntax, "");
-      const parsed = parseFancyCommentBlock([...block.split("\n"), separator], language.syntax);
+      const block = BuildCommentBlock(language.syntax, "", "Section");
+      const separator = BuildCommentLine(language.syntax, "");
+      const parsed = ParseFancyCommentBlock([...block.split("\n"), separator], language.syntax);
 
       assert.deepStrictEqual(parsed, { text: "Section", lineCount: 4 });
     });
   }
 
   it("uses JSONC coverage because standard JSON has no comments", () => {
-    const line = buildCommentLine(cStyle, "JSONC Section");
-    assert.deepStrictEqual(parseFancyCommentLine(line, cStyle), { text: "JSONC Section" });
+    const line = BuildCommentLine(cStyle, "JSONC Section");
+    assert.deepStrictEqual(ParseFancyCommentLine(line, cStyle), { text: "JSONC Section" });
   });
 });

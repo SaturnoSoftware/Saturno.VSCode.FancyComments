@@ -43,13 +43,13 @@ export const DEFAULT_CONFIG: FormattingConfig = {
 //
 
 // -----------------------------------------------------------------------------
-export function buildCommentLine(
+export function BuildCommentLine(
   syntax: CommentSyntax,
   text: string,
   config: FormattingConfig = DEFAULT_CONFIG,
   startColumn = 0
 ): string {
-  syntax = normalizeSingleLineSyntax(syntax);
+  syntax = _NormalizeSingleLineSyntax(syntax);
   text = text.trim();
 
   const prefix = syntax.singleLineStart + " " + config.separatorChar.repeat(config.separatorPrefixLength);
@@ -65,8 +65,8 @@ export function buildCommentLine(
 }
 
 // -----------------------------------------------------------------------------
-export function buildCommentBlock(syntax: CommentSyntax, indent: string, text: string): string {
-  syntax = normalizeMultiLineSyntax(syntax);
+export function BuildCommentBlock(syntax: CommentSyntax, indent: string, text: string): string {
+  syntax = _NormalizeMultiLineSyntax(syntax);
   const textLines = text.trim().split(/\r?\n/);
   const lines = [
     indent + syntax.multiLineStart,
@@ -78,7 +78,7 @@ export function buildCommentBlock(syntax: CommentSyntax, indent: string, text: s
 }
 
 // -----------------------------------------------------------------------------
-export function getIndentColumn(lineText: string, cursorCharacter: number): number {
+export function GetIndentColumn(lineText: string, cursorCharacter: number): number {
   if (lineText.trim().length === 0) {
     return cursorCharacter;
   }
@@ -90,12 +90,12 @@ export function getIndentColumn(lineText: string, cursorCharacter: number): numb
 //
 
 // -----------------------------------------------------------------------------
-export function parseFancyCommentLine(
+export function ParseFancyCommentLine(
   line: string,
   syntax: CommentSyntax,
   config: FormattingConfig = DEFAULT_CONFIG
 ): { text: string } | null {
-  syntax = normalizeSingleLineSyntax(syntax);
+  syntax = _NormalizeSingleLineSyntax(syntax);
   const trimmed = line.trimStart();
 
   const prefix = syntax.singleLineStart + " " + config.separatorChar.repeat(config.separatorPrefixLength);
@@ -118,7 +118,7 @@ export function parseFancyCommentLine(
     return { text: "" };
   }
 
-  if (isAllChar(body, config.separatorChar)) {
+  if (_IsAllChar(body, config.separatorChar)) {
     return { text: "" };
   }
 
@@ -152,12 +152,12 @@ export function parseFancyCommentLine(
 }
 
 // -----------------------------------------------------------------------------
-export function parseFancyCommentBlock(
+export function ParseFancyCommentBlock(
   lines: string[],
   syntax: CommentSyntax,
   config: FormattingConfig = DEFAULT_CONFIG
 ): { text: string; lineCount: number } | null {
-  syntax = normalizeMultiLineSyntax(syntax);
+  syntax = _NormalizeMultiLineSyntax(syntax);
   if (lines.length < 3) {
     return null;
   }
@@ -191,7 +191,7 @@ export function parseFancyCommentBlock(
 
   const text = textLines.join("\n");
   if (lines.length > endLine + 1) {
-    const separatorParsed = parseFancyCommentLine(lines[endLine + 1], syntax, config);
+    const separatorParsed = ParseFancyCommentLine(lines[endLine + 1], syntax, config);
     if (separatorParsed !== null && separatorParsed.text === "") {
       return { text, lineCount: endLine + 2 };
     }
@@ -204,13 +204,13 @@ export function parseFancyCommentBlock(
 //
 
 // -----------------------------------------------------------------------------
-export function findFancyCommentBlock(
+export function FindFancyCommentBlock(
   lines: string[],
   cursorLine: number,
   syntax: CommentSyntax,
   config: FormattingConfig = DEFAULT_CONFIG
 ): { text: string; startLine: number; lineCount: number } | null {
-  syntax = normalizeMultiLineSyntax(syntax);
+  syntax = _NormalizeMultiLineSyntax(syntax);
   // Search backwards from cursor (max 3 lines back) for multiLineStart
   const searchStart = Math.max(0, cursorLine - 3);
 
@@ -221,7 +221,7 @@ export function findFancyCommentBlock(
 
     // Found a candidate start - try to parse the block from here
     const blockLines = lines.slice(i);
-    const parsed = parseFancyCommentBlock(blockLines, syntax, config);
+    const parsed = ParseFancyCommentBlock(blockLines, syntax, config);
     if (parsed === null) {
       continue;
     }
@@ -243,7 +243,7 @@ export function findFancyCommentBlock(
 //
 
 // -----------------------------------------------------------------------------
-function isAllChar(s: string, ch: string): boolean {
+function _IsAllChar(s: string, ch: string): boolean {
   for (let i = 0; i < s.length; i++) {
     if (s[i] !== ch) return false;
   }
@@ -251,10 +251,10 @@ function isAllChar(s: string, ch: string): boolean {
 }
 
 // -----------------------------------------------------------------------------
-function normalizeSingleLineSyntax(syntax: CommentSyntax): CommentSyntax {
+function _NormalizeSingleLineSyntax(syntax: CommentSyntax): CommentSyntax {
   return {
     singleLineStart: syntax.singleLineEnd.length === 0
-      ? normalizeCommentToken(syntax.singleLineStart)
+      ? _NormalizeCommentToken(syntax.singleLineStart)
       : syntax.singleLineStart,
     singleLineEnd: syntax.singleLineEnd,
     multiLineStart: syntax.multiLineStart,
@@ -264,22 +264,22 @@ function normalizeSingleLineSyntax(syntax: CommentSyntax): CommentSyntax {
 }
 
 // -----------------------------------------------------------------------------
-function normalizeMultiLineSyntax(syntax: CommentSyntax): CommentSyntax {
-  if (!shouldNormalizeLineLikeSyntax(syntax)) {
+function _NormalizeMultiLineSyntax(syntax: CommentSyntax): CommentSyntax {
+  if (!_ShouldNormalizeLineLikeSyntax(syntax)) {
     return syntax;
   }
 
   return {
     singleLineStart: syntax.singleLineStart,
     singleLineEnd: syntax.singleLineEnd,
-    multiLineStart: normalizeCommentToken(syntax.multiLineStart),
-    multiLineMiddle: normalizeCommentToken(syntax.multiLineMiddle),
-    multiLineEnd: normalizeCommentToken(syntax.multiLineEnd),
+    multiLineStart: _NormalizeCommentToken(syntax.multiLineStart),
+    multiLineMiddle: _NormalizeCommentToken(syntax.multiLineMiddle),
+    multiLineEnd: _NormalizeCommentToken(syntax.multiLineEnd),
   };
 }
 
 // -----------------------------------------------------------------------------
-function normalizeCommentToken(token: string): string {
+function _NormalizeCommentToken(token: string): string {
   if (token.length !== 1 || token.trim().length !== 1) {
     return token;
   }
@@ -288,7 +288,7 @@ function normalizeCommentToken(token: string): string {
 }
 
 // -----------------------------------------------------------------------------
-function shouldNormalizeLineLikeSyntax(syntax: CommentSyntax): boolean {
+function _ShouldNormalizeLineLikeSyntax(syntax: CommentSyntax): boolean {
   if (syntax.singleLineEnd.length !== 0) {
     return false;
   }

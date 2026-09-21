@@ -98,8 +98,32 @@ describe("extension packaging assets", () => {
     }
   });
 
-  it("excludes source and nested-library development files from the VSIX", () => {
+  it("keeps every icon the About panel's cards reference", () => {
+    for (const iconName of [
+      "icon.png",
+      "saturno-software.png",
+      "presskit-diy.png",
+      "gosh.webp",
+      "fancy-header.png",
+    ]) {
+      assert.ok(
+        fs.existsSync(path.join(REPOSITORY_ROOT, "Resources", "icons", iconName)),
+        `Resources/icons/${iconName} is referenced by About.ts and must exist`
+      );
+    }
+  });
+
+  it("declares its workspace trust posture and excludes development files from the VSIX", () => {
+    const packageJson = JSON.parse(readRepositoryFile("package.json")) as {
+      capabilities: { untrustedWorkspaces: { supported: boolean } };
+    };
     const ignoreFile = readRepositoryFile(".vscodeignore");
+
+    // FancyComments only rewrites the text in front of the cursor, so it
+    // supports an untrusted workspace. FancyHeader reads git config and the
+    // filesystem to build a header and declares the opposite. The divergence
+    // is deliberate; a silent flip either way fails this assertion.
+    assert.strictEqual(packageJson.capabilities.untrustedWorkspaces.supported, true);
 
     assert.match(ignoreFile, /^Source\/\*\*$/m);
     assert.match(ignoreFile, /^Libraries\/\*\*$/m);
