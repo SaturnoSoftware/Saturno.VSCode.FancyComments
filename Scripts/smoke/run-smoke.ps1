@@ -5,7 +5,7 @@ param(
 )
 
 # Clean-profile install and command smoke test for the packaged .vsix.
-# FANCYCMNT-0027: "clean-profile install and both-command smoke" is a real
+# A clean-profile install with both commands exercised is a real
 # assertion, not a claim - this launches a real VS Code extension host with an
 # isolated --user-data-dir/--extensions-dir, installs the .vsix into it, and
 # runs Scripts/smoke/smokeTest.js inside that host to invoke both commands.

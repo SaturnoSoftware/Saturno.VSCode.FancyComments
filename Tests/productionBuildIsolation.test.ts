@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 /**
- * FANCYCMNT-0053: runs the real production build into a throwaway output
+ * Runs the real production build into a throwaway output
  * directory and checks the result with FancyLib's independent
  * BuildIsolation contract - a shared helper, but a check this repo runs for
  * itself, so a regression in build.ps1 or tsconfig.prod.json fails right
@@ -47,7 +47,7 @@ const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
  *  generic default alone would miss a barrel-import leak of that whole
  *  module family into a production build - exactly what tsconfig.json's
  *  wholesale "Libraries" include was doing here before tsconfig.prod.json
- *  narrowed it to `["Source"]` (VSCODEKIT-0021/FANCYCMNT-0053). */
+ *  narrowed it to `["Source"]`. */
 // -----------------------------------------------------------------------------
 function fancyCommentsIsolationContract(): BuildChannelIsolationContract {
   const contract = defaultBuildChannelIsolationContract();
@@ -79,7 +79,7 @@ function runProductionBuild(buildOutputDir: string): void {
 }
 
 // -----------------------------------------------------------------------------
-describe("Production build isolation (FANCYCMNT-0053)", () => {
+describe("Production build isolation", () => {
   let buildOutputDir: string;
 
   before(() => {

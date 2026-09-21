@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { DEFAULT_CONFIG, ParseFancyCommentLine } from "../Source/Formatting";
+import { DEFAULT_CONFIG, ParseFancyCommentLine } from "../Source/Core/Formatting";
 import {
   CreateBlockCommentSyntax,
   CreateLineLikeCommentSyntax,
@@ -10,7 +10,7 @@ import {
   InferFancyCommentLineSyntax,
   NormalizeCommentImplementation,
   ShouldUseVSCodeBlockComment,
-} from "../Source/Commenting";
+} from "../Source/Core/Commenting";
 
 describe("NormalizeCommentImplementation", () => {
   it("defaults to vscode mode", () => {

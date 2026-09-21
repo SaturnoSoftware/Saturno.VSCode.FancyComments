@@ -21,15 +21,15 @@ param(
     [string]$ReleaseName = "vscode-fancy-comments",
     [ValidateSet("development", "production")]
     [string]$Environment = $(if ($env:SATURNO_BUILD_ENVIRONMENT) { $env:SATURNO_BUILD_ENVIRONMENT } else { "development" }),
-    # PROJECTBUILDER-0049: naming/path concern only - forwarded by spb, logged
-    # here, and consumed by Scripts/package.ps1 to suffix the packaged .vsix.
+    # Naming and path concern only - forwarded by spb, logged here, and
+    # consumed by Scripts/package.ps1 to suffix the packaged .vsix.
     # Does NOT affect what this script compiles or strips; that stays governed
     # by -Environment above, unchanged.
     [ValidateSet("development", "rc", "release")]
     [string]$BuildChannel = "release"
 )
 
-# FANCYCMNT-0053: development-only code lives in Source/dev and is excluded
+# Development-only code lives in Source/dev and is excluded
 # from tsconfig.prod.json, so a production build never compiles it. This
 # script does the other half: it strips the dev command and menu entry from
 # the package.json that goes into the package, so the function is not in the
@@ -164,7 +164,7 @@ if (Test-Path -LiteralPath (Join-Path $ProjectRoot "Resources") -PathType Contai
 # Resources/, since a packaged extension can only serve webview resources
 # from paths inside itself. Without this, the command is registered but the
 # HTML it loads was never shipped, and it fails with file-not-found the
-# first time anyone runs it (FANCYCMNT-B0008).
+# first time anyone runs it.
 $AboutPageSource = Join-Path $ProjectRoot "Libraries/Saturno.VSCode.FancyLib/Source/AboutPage"
 $AboutPageDest = Join-Path $BuildOutputDir "Resources/AboutPage"
 New-Item -ItemType Directory -Force -Path $AboutPageDest | Out-Null

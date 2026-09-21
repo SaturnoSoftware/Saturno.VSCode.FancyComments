@@ -8,15 +8,24 @@
 //                          .   '=.__.=' `='      *                           //
 //                                                                            //
 //                                                                            //
-// File      : formatting.ts                                                  //
+// File      : Formatting.ts                                                  //
 // Project   : Saturno.VSCode.FancyComments                                   //
 // Date      : 2026-05-19                                                     //
 // Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // -------------------------------------------------------------------------- //
 
+/**
+ * Building a fancy comment from text, and reading one back out.
+ *
+ * Every function here is a pure string transform over an explicit
+ * CommentSyntax and FormattingConfig: no editor, no cursor, no document.
+ * That is what lets the toggle behave symmetrically - Parse is the exact
+ * inverse of Build, and a round trip is what a test can assert.
+ */
+
 // -----------------------------------------------------------------------------
-import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
+import { CommentSyntax } from "../../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
 export { CommentSyntax };
 
 //
@@ -199,6 +208,7 @@ export function ParseFancyCommentBlock(
 
   return { text, lineCount: endLine + 1 };
 }
+
 //
 // SEARCH FUNCTIONS (for block-aware toggle)
 //
@@ -219,14 +229,12 @@ export function FindFancyCommentBlock(
       continue;
     }
 
-    // Found a candidate start - try to parse the block from here
     const blockLines = lines.slice(i);
     const parsed = ParseFancyCommentBlock(blockLines, syntax, config);
     if (parsed === null) {
       continue;
     }
 
-    // Verify cursor is within the block range
     const blockEnd = i + parsed.lineCount - 1;
     if (cursorLine > blockEnd) {
       continue;
@@ -243,9 +251,11 @@ export function FindFancyCommentBlock(
 //
 
 // -----------------------------------------------------------------------------
-function _IsAllChar(s: string, ch: string): boolean {
-  for (let i = 0; i < s.length; i++) {
-    if (s[i] !== ch) return false;
+function _IsAllChar(text: string, expectedChar: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== expectedChar) {
+      return false;
+    }
   }
   return true;
 }

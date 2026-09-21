@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { GetIndentColumn } from "../Source/Formatting";
+import { GetIndentColumn } from "../Source/Core/Formatting";
 
 describe("GetIndentColumn", () => {
   it("returns cursor position for empty line", () => {

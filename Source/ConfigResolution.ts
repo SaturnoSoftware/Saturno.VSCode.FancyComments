@@ -15,20 +15,20 @@
 // Author    : mateusdigital <hello@mateus.digital>                           //
 // License   : GPLv3                                                          //
 // -------------------------------------------------------------------------- //
-// SPDX-License-Identifier: GPL-3.0-only
 
 /**
- * The one place that reads settings out of the editor. Everything it returns
- * has already been through Config.ts's NormalizeConfig, so no caller has to
- * wonder whether a value came from a validated settings UI or a hand-edited
- * settings.json.
+ * The one place that reads settings out of the editor.
+ *
+ * What it returns has already been through Core/Config.ts, so no caller has
+ * to wonder whether a value came from the validated settings UI or from a
+ * hand-edited settings.json.
  */
 
 // -----------------------------------------------------------------------------
 import * as vscode from "vscode";
 // -----------------------------------------------------------------------------
 import { CONFIG_SECTION } from "./Constants";
-import { DEFAULT_EXTENSION_CONFIG, ExtensionConfig, NormalizeConfig } from "./Config";
+import { DEFAULT_EXTENSION_CONFIG, ExtensionConfig, NormalizeConfig } from "./Core/Config";
 
 // -----------------------------------------------------------------------------
 export function GetConfig(): ExtensionConfig {

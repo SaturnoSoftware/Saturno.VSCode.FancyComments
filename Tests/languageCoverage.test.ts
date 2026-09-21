@@ -6,7 +6,7 @@ import {
   CommentSyntax,
   ParseFancyCommentBlock,
   ParseFancyCommentLine,
-} from "../Source/Formatting";
+} from "../Source/Core/Formatting";
 
 interface LanguageFixture {
   name: string;

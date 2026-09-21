@@ -6,6 +6,44 @@ Entries before 3.3.0 are reconstructed from the repository's git history: this f
 exist until 2026-09-21, so anything older than the commits it was written from is summarized
 rather than recorded at the time.
 
+## 3.4.0 - 2026-09-21
+
+### Changed
+- `Source/` is split into an adapter and a core, the shape the VS Code extension standard
+  asks for. `Extension.ts` is a table of commands and nothing else; `Commands.ts` holds the
+  bodies; `Source/Core/` holds `Config.ts`, `Commenting.ts` and `Formatting.ts`, none of
+  which may reach `vscode` - directly or through the FancyLib barrel, which re-exports
+  modules that do. `Tests/purity.test.ts` is the new gate that says so.
+- The About panel moved to FancyLib. `Source/About.ts` was 177 lines of webview plumbing
+  that differed from FancyHeader's copy in six data values; it is now a 59-line `AboutSpec`
+  declaring the name, the description and the products in the grid. FancyLib 1.3.0 owns the
+  webview, the CSP nonce, the template load and the URI resolution.
+- The development-only Open Bug command moved to FancyLib for the same reason. `Source/dev/`
+  was 203 lines identical to FancyHeader's but for six values, and is now 48 lines that name
+  the settings section, the marketplace id, the devMode key and the bug-title placeholder.
+- `Source/DevHooks.ts` is gone; the `DevHost`/`DevModule` contract was never
+  extension-specific and now lives in FancyLib.
+- Comments no longer open with tracker ids. The reasoning each one carried is kept.
+
+### Fixed
+- The About command failed with file-not-found when the extension ran unbuilt. `about.html`
+  and `about.css` are checked into FancyLib and copied into `Resources/` by the build
+  script, so a working tree has no copy and pressing F5 gave a broken command. The panel now
+  falls back to the submodule's own source path.
+- FancyLib's test suites were never actually running from this repository. `npm test` pointed
+  `node --test` at `out/Libraries/.../tests/*.test.js`, a path the compiler never wrote, and
+  node ignores a glob that matches nothing rather than failing. The suite reports 579 tests
+  now, against 427 before, with no new test written for the difference.
+- `npm run lint`, `npm test`, `tsconfig.json`'s `exclude` and `.vscodeignore` all spelled the
+  test directory `tests` while the directory on disk is `Tests`. Every one of them only
+  resolved because Windows does not distinguish the two; the directory is tracked as `Tests`
+  now and every reference matches it.
+- The release-only VSIX contract check in `Scripts/package.ps1` matched `tests/` lowercase,
+  so the renamed tree would have passed a guard meant to reject it.
+- `Tests/extensionAssets.test.ts` asserted that the staged build contained
+  `out/Source/extension.js`; the file is `Extension.js`, and the assertion passed only by the
+  same case-insensitivity.
+
 ## 3.3.0 - 2026-09-21
 
 ### Fixed

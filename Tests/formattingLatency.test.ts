@@ -1,5 +1,5 @@
 /**
- * FANCYCMNT-0046: measured, not estimated. This extension has no per-keystroke hook (no
+ * Measured, not estimated. This extension has no per-keystroke hook (no
  * `onDidChangeTextDocument` handler) - the hot path is `BuildCommentBlock`/`BuildCommentLine`,
  * run once per command invocation (build, toggle, edit-comment-block). That invocation is what
  * gets measured here; "cost per keystroke" in the review task's original framing does not apply
@@ -7,7 +7,7 @@
  */
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { BuildCommentBlock, BuildCommentLine, CommentSyntax } from "../Source/Formatting";
+import { BuildCommentBlock, BuildCommentLine, CommentSyntax } from "../Source/Core/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",

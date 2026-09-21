@@ -18,17 +18,14 @@ function readRepositoryFile(relativePath: string): string {
 }
 
 /**
- * FANCYCMNT-B0008: the previous version of this file asserted that
- * media/about.html existed in the REPOSITORY, and it passed for weeks while
- * every packaged artifact shipped without the file. What ships is the staged
- * tree that Scripts/package.ps1 packages, not the repository, so an asset
- * contract that only looks at the repository proves nothing about the
- * product.
+ * What ships is the staged tree that Scripts/package.ps1 packages, not the
+ * repository. An earlier version of this file asserted that the About
+ * template existed in the REPOSITORY, and it passed for weeks while every
+ * packaged artifact shipped without the file - so the assertions below look
+ * at the staged output, which is the thing that becomes the vsix.
  *
- * Note also that package.json's saturno.cicd.build.expectedFiles is declared
- * but enforced by nothing - a grep of Saturno.ProjectBuilder on 2026-09-21
- * finds no reader for it. It is documentation, so this file, not that list,
- * is the actual gate.
+ * package.json's saturno.cicd.build.expectedFiles is documentation: nothing
+ * reads it. This file, not that list, is the gate.
  */
 describe("extension packaging assets", () => {
   it("keeps the About page template in FancyLib, where every extension stages it from", () => {
@@ -46,13 +43,14 @@ describe("extension packaging assets", () => {
       icon: string;
       saturno: { cicd: { build: { expectedFiles: string[] } } };
     };
-    const aboutSource = readRepositoryFile("Source/About.ts");
+    // The panel itself lives in FancyLib now; this extension only declares
+    // which files under Resources/ it expects the panel to find.
+    const panelSource = fs.readFileSync(path.join(ABOUT_PAGE_SOURCE, "AboutPanel.ts"), "utf8");
 
     assert.ok(fs.existsSync(path.join(REPOSITORY_ROOT, packageJson.icon)));
     assert.match(packageJson.icon, /^Resources\/icons\//);
-    assert.match(aboutSource, /"Resources", "AboutPage", "about\.html"/);
-    assert.match(aboutSource, /"Resources", "AboutPage", "about\.css"/);
-    assert.doesNotMatch(aboutSource, /"media"/);
+    assert.match(panelSource, /STAGED_ASSET_SEGMENTS = \["Resources", "AboutPage"\]/);
+    assert.doesNotMatch(panelSource, /"media"/);
 
     for (const expected of [
       "Resources/AboutPage/about.html",
@@ -83,13 +81,13 @@ describe("extension packaging assets", () => {
       return;
     }
 
-    // This is the assertion that would have caught FANCYCMNT-B0008: it looks
-    // at the directory Scripts/package.ps1 actually turns into the vsix.
+    // This is the assertion that catches a missing asset: it looks at the
+    // directory Scripts/package.ps1 actually turns into the vsix.
     for (const relativePath of [
       path.join("Resources", "AboutPage", "about.html"),
       path.join("Resources", "AboutPage", "about.css"),
       path.join("Resources", "icons", "icon.png"),
-      path.join("out", "Source", "extension.js"),
+      path.join("out", "Source", "Extension.js"),
     ]) {
       assert.ok(
         fs.existsSync(path.join(STAGING_ROOT, relativePath)),
@@ -108,7 +106,7 @@ describe("extension packaging assets", () => {
     ]) {
       assert.ok(
         fs.existsSync(path.join(REPOSITORY_ROOT, "Resources", "icons", iconName)),
-        `Resources/icons/${iconName} is referenced by About.ts and must exist`
+        `Resources/icons/${iconName} is named in About.ts and must exist`
       );
     }
   });
@@ -127,8 +125,8 @@ describe("extension packaging assets", () => {
 
     assert.match(ignoreFile, /^Source\/\*\*$/m);
     assert.match(ignoreFile, /^Libraries\/\*\*$/m);
-    assert.match(ignoreFile, /^tests\/\*\*$/m);
-    assert.match(ignoreFile, /^out\/Libraries\/\*\*\/tests\/\*\*$/m);
+    assert.match(ignoreFile, /^Tests\/\*\*$/m);
+    assert.match(ignoreFile, /^out\/Libraries\/\*\*\/Tests\/\*\*$/m);
     assert.doesNotMatch(ignoreFile, /^src\/\*\*$/m);
     assert.doesNotMatch(ignoreFile, /^libs\/\*\*$/m);
   });

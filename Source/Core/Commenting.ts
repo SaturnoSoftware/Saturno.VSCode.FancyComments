@@ -8,16 +8,27 @@
 //                          .   '=.__.=' `='      *                           //
 //                                                                            //
 //                                                                            //
-// File      : commenting.ts                                                  //
+// File      : Commenting.ts                                                  //
 // Project   : Saturno.VSCode.FancyComments                                   //
-// Date      : 2026-08-27                                                     //
+// Date      : 2026-09-03                                                     //
 // Copyright : Saturno Software - 2026                                        //
 // Author    : mateusdigital <hello@mateus.digital>                           //
+// License   : GPLv3                                                          //
 // -------------------------------------------------------------------------- //
-// SPDX-License-Identifier: GPL-3.0-only
 
-// !BUG: FANCYCMNT-B0001
-import { CommentSyntax } from "../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
+/**
+ * Recognising a fancy comment that is already on the page.
+ *
+ * Formatting.ts can build and parse given a CommentSyntax. This file is the
+ * step before that: working out which syntax a line or a block was written
+ * in, including when VS Code's own language data does not know the language
+ * or the file was written by a different editor. Every inference is
+ * confirmed by round-tripping it through Formatting.ts's parser, so a guess
+ * that does not reproduce the text is rejected rather than applied.
+ */
+
+// -----------------------------------------------------------------------------
+import { CommentSyntax } from "../../Libraries/Saturno.VSCode.FancyLib/Source/CommentUtils";
 import {
   DEFAULT_CONFIG,
   FindFancyCommentBlock,
@@ -26,7 +37,16 @@ import {
   ParseFancyCommentLine,
 } from "./Formatting";
 
-// !BUG: FANCYCMNT-B0001
+//
+// TYPES
+//
+
+/**
+ * Which engine turns a line into a comment: VS Code's own comment commands
+ * ("vscode"), or this extension's syntax resolver ("syntax"). Settings can
+ * hold anything, so anything that is not "syntax" is the default.
+ */
+// -----------------------------------------------------------------------------
 export type CommentImplementation = "syntax" | "vscode";
 
 // -----------------------------------------------------------------------------
