@@ -44,5 +44,9 @@ export function GetConfig(): ExtensionConfig {
       "commentImplementation",
       DEFAULT_EXTENSION_CONFIG.commentImplementation
     ),
+    nativeBlockDelimiters: cfg.get<ExtensionConfig["nativeBlockDelimiters"]>(
+      "nativeBlockDelimiters",
+      DEFAULT_EXTENSION_CONFIG.nativeBlockDelimiters
+    ),
   });
 }

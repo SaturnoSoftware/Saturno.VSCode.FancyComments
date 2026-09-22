@@ -101,6 +101,19 @@
           "maximum": 20,
           "description": "Number of separator characters before the text."
         },
+        "saturno-fancy-comments.nativeBlockDelimiters": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "languageDefault"
+          ],
+          "enumDescriptions": [
+            "Keep the block's own delimiters, so a C-style block stays a C-style block.",
+            "Rewrite the block with the language's default comment syntax."
+          ],
+          "default": "preserve",
+          "description": "What to do with the delimiters of an existing block comment when rewriting it. Only differs in languages whose default comment is a line comment, such as TypeScript, C# and Go; in CSS, HTML and JSX both values give the same result."
+        },
         "saturno-fancy-comments.commentImplementation": {
           "type": "string",
           "enum": [

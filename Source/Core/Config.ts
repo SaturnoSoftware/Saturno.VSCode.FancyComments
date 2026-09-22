@@ -24,7 +24,12 @@
 
 // -----------------------------------------------------------------------------
 import * as Utils from "../../Libraries/Saturno.VSCode.FancyLib/Source/Utils";
-import { CommentImplementation, NormalizeCommentImplementation } from "./Commenting";
+import {
+  CommentImplementation,
+  NativeBlockDelimiters,
+  NormalizeCommentImplementation,
+  NormalizeNativeBlockDelimiters,
+} from "./Commenting";
 import { DEFAULT_CONFIG, FormattingConfig } from "./Formatting";
 
 //
@@ -34,12 +39,14 @@ import { DEFAULT_CONFIG, FormattingConfig } from "./Formatting";
 // -----------------------------------------------------------------------------
 export interface ExtensionConfig extends FormattingConfig {
   commentImplementation: CommentImplementation;
+  nativeBlockDelimiters: NativeBlockDelimiters;
 }
 
 // -----------------------------------------------------------------------------
 export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   ...DEFAULT_CONFIG,
   commentImplementation: "vscode",
+  nativeBlockDelimiters: "preserve",
 };
 
 //
@@ -64,5 +71,6 @@ export function NormalizeConfig(config: Partial<ExtensionConfig>): ExtensionConf
       DEFAULT_EXTENSION_CONFIG.separatorPrefixLength
     ),
     commentImplementation: NormalizeCommentImplementation(config.commentImplementation),
+    nativeBlockDelimiters: NormalizeNativeBlockDelimiters(config.nativeBlockDelimiters),
   };
 }

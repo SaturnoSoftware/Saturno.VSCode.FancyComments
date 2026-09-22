@@ -49,6 +49,21 @@ import {
 // -----------------------------------------------------------------------------
 export type CommentImplementation = "syntax" | "vscode";
 
+/**
+ * What to do with the delimiters of an existing block comment the command is
+ * asked to rewrite.
+ *
+ * "preserve" keeps the block's own markers, so a C-style block stays a
+ * C-style block even in a language whose default comment is a line comment.
+ * "languageDefault" rewrites it with whatever the language resolves to.
+ *
+ * The two are identical wherever the language's default comment already is a
+ * block - CSS, HTML, JSX. They differ only where a line comment wins the
+ * resolution, which is every C-family language.
+ */
+// -----------------------------------------------------------------------------
+export type NativeBlockDelimiters = "preserve" | "languageDefault";
+
 // -----------------------------------------------------------------------------
 export interface ResolvedCommentText {
   syntax: CommentSyntax;
@@ -67,6 +82,11 @@ export interface FoundFancyCommentBlock {
 // -----------------------------------------------------------------------------
 export function NormalizeCommentImplementation(value: string | undefined): CommentImplementation {
   return value === "syntax" ? "syntax" : "vscode";
+}
+
+// -----------------------------------------------------------------------------
+export function NormalizeNativeBlockDelimiters(value: string | undefined): NativeBlockDelimiters {
+  return value === "languageDefault" ? "languageDefault" : "preserve";
 }
 
 // -----------------------------------------------------------------------------
@@ -172,6 +192,32 @@ export function InferFancyCommentLineSyntax(
 }
 
 // -----------------------------------------------------------------------------
+/**
+ * Whether a token could be a comment marker at all.
+ *
+ * A comment marker is punctuation: the slash-star family, `//`, `#`, `--`,
+ * `;`, `%`, the single quote, the angle-bang of HTML. It never contains a
+ * letter, a digit or a space, and it is never long.
+ *
+ * Without this test the inference below is circular: it derives a candidate
+ * syntax from the literal text of three lines and then confirms that
+ * candidate against those same three lines, which cannot fail. That is how
+ * three lines of ordinary source code were being recognised as a comment
+ * block and collapsed into one.
+ */
+// -----------------------------------------------------------------------------
+export function IsCommentDelimiter(token: string): boolean {
+  return /^[^\w\s]{1,4}$/.test(token);
+}
+
+/**
+ * Works out which comment syntax a block on the page was written in.
+ *
+ * Every branch ends at ParseFancyCommentBlock, which re-reads the block with
+ * the candidate syntax. That check only means something because the tokens
+ * reaching it have already been constrained to look like comment markers.
+ */
+// -----------------------------------------------------------------------------
 export function InferFancyCommentBlockSyntax(
   lines: string[],
   config: FormattingConfig = DEFAULT_CONFIG
@@ -180,58 +226,93 @@ export function InferFancyCommentBlockSyntax(
     return null;
   }
 
-  const startToken = lines[0].trimStart();
-  const indent = lines[0].slice(0, lines[0].length - startToken.length);
-  if (startToken.length === 0) {
+  const start_token = lines[0].trimStart();
+  const indent = lines[0].slice(0, lines[0].length - start_token.length);
+  if (!IsCommentDelimiter(start_token)) {
     return null;
   }
 
-  // Explicitly support generated C/JS-style blocks even when the middle marker
-  // has no separating space (for example, `*Title`). The start/end pair keeps
-  // this narrow and prevents arbitrary prose from being inferred as a block.
-  if (startToken === "/*" || startToken === "{/*") {
-    const endToken = startToken === "{/*" ? "*/}" : "*/";
-    const endIndex = lines.findIndex((line, index) => index >= 2 && line === indent + endToken);
-    const syntax: CommentSyntax = {
-      singleLineStart: startToken,
-      singleLineEnd: endToken,
-      multiLineStart: startToken,
-      multiLineMiddle: "*",
-      multiLineEnd: endToken,
-    };
-    if (endIndex >= 2 && ParseFancyCommentBlock(lines, syntax, config) !== null) {
-      return syntax;
+  // Delimited blocks, including the `/**` of a JSDoc comment.
+  //
+  // Two conventions coexist for where the body and the closer sit, and both
+  // are common enough that guessing one would break the other:
+  //
+  //     /*          /**
+  //     *Title       * Title
+  //     */           */
+  //
+  // The closer is flush with the opener in the first and one column past it
+  // in the second, and the body marker follows the same offset. Rather than
+  // pick, every combination is offered to ParseFancyCommentBlock and the one
+  // that actually re-reads the block is the answer.
+  const closers = _MatchingBlockClosers(start_token);
+  if (closers !== null) {
+    for (const closer of closers) {
+      for (const middle of [closer.startsWith(" ") ? " *" : "*", "*", " *", ""]) {
+        const syntax: CommentSyntax = {
+          singleLineStart: start_token,
+          singleLineEnd: closer.trimStart(),
+          multiLineStart: start_token,
+          multiLineMiddle: middle,
+          multiLineEnd: closer,
+        };
+        if (ParseFancyCommentBlock(lines, syntax, config) !== null) {
+          return syntax;
+        }
+      }
     }
     return null;
   }
 
-  // Generated line-like blocks repeat the same marker on the opening, body,
-  // and closing lines. This accepts `##Title` as well as `## Title`.
-  const lineLikeSyntax = CreateLineLikeCommentSyntax(startToken);
-  if (lines[1].startsWith(indent + startToken)) {
-    const endIndex = lines.findIndex((line, index) => index >= 2 && line === indent + startToken);
-    if (endIndex >= 2 && ParseFancyCommentBlock(lines, lineLikeSyntax, config) !== null) {
-      return lineLikeSyntax;
+  // Line-like blocks repeat the same marker on every line. This accepts
+  // `##Title` as well as `## Title`.
+  const line_like = CreateLineLikeCommentSyntax(start_token);
+  if (lines[1].startsWith(indent + start_token)) {
+    const end_index = lines.findIndex((line, index) => index >= 2 && line === indent + start_token);
+    if (end_index >= 2 && ParseFancyCommentBlock(lines, line_like, config) !== null) {
+      return line_like;
     }
   }
 
-  // Fallback for block syntaxes whose middle marker is separated from content.
-  const endToken = lines[2].trimStart();
-  const middleRemainder = lines[1].slice(indent.length);
-  const middleSpace = middleRemainder.indexOf(" ");
-  if (!endToken || middleSpace <= 0) {
+  // Any other block whose middle marker is separated from the content. Both
+  // ends have to be real markers, which is what stops prose from qualifying.
+  const end_token = lines[2].trimStart();
+  const middle_remainder = lines[1].slice(indent.length);
+  const middle_space = middle_remainder.indexOf(" ");
+  if (middle_space <= 0 || !IsCommentDelimiter(end_token)) {
     return null;
   }
 
-  const middleToken = middleRemainder.slice(0, middleSpace);
+  const middle_token = middle_remainder.slice(0, middle_space);
+  if (!IsCommentDelimiter(middle_token)) {
+    return null;
+  }
+
   const syntax: CommentSyntax = {
-    singleLineStart: startToken,
-    singleLineEnd: endToken,
-    multiLineStart: startToken,
-    multiLineMiddle: middleToken,
-    multiLineEnd: endToken,
+    singleLineStart: start_token,
+    singleLineEnd: end_token,
+    multiLineStart: start_token,
+    multiLineMiddle: middle_token,
+    multiLineEnd: end_token,
   };
   return ParseFancyCommentBlock(lines, syntax, config) !== null ? syntax : null;
+}
+
+/**
+ * The closing marker for a block opener, and null for anything that does
+ * not open a block. The leading space on the C-style closer is how a JSDoc
+ * closing marker lines up one column past its opener.
+ */
+// -----------------------------------------------------------------------------
+function _MatchingBlockClosers(startToken: string): string[] | null {
+  switch (startToken) {
+    case "/*":
+    case "/**": return ["*/", " */"];
+    case "{/*": return ["*/}", " */}"];
+    case "(*":  return ["*)", " *)"];
+    case "<!--": return ["-->", " -->"];
+    default: return null;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -284,6 +365,81 @@ export function FindFancyCommentBlockUsingKnownSyntaxFirst(
   }
 
   return FindFancyCommentBlockWithInferredSyntax(lines, cursorLine, config);
+}
+
+//
+// NATIVE BLOCKS
+//
+
+/**
+ * The comment block the caret sits inside, when that block is the
+ * language's own and not one this extension generated.
+ *
+ * This is what makes the multi-line command act on the block the user can
+ * see, instead of on the single line the caret happens to be on. It returns
+ * the whole block - opener, body, closer - and the body text with every
+ * marker stripped, so the caller can rebuild it without losing a line.
+ *
+ * It is deliberately a separate search from the fancy-block one: a fancy
+ * block is toggled back to plain text, while a native block is rewritten.
+ * Those are different outcomes and must not be decided by the same code.
+ */
+// -----------------------------------------------------------------------------
+export function FindNativeCommentBlock(
+  lines: string[],
+  cursorLine: number,
+  config: FormattingConfig = DEFAULT_CONFIG
+): FoundFancyCommentBlock | null {
+  for (let start = cursorLine; start >= 0; start--) {
+    const opener = lines[start].trimStart();
+    if (_MatchingBlockClosers(opener) === null) {
+      continue;
+    }
+
+    const syntax = InferFancyCommentBlockSyntax(lines.slice(start), config);
+    if (!syntax) {
+      continue;
+    }
+
+    const parsed = ParseFancyCommentBlock(lines.slice(start), syntax, config);
+    if (!parsed) {
+      continue;
+    }
+
+    // The caret has to be inside the block that was found, not merely after
+    // some block that closed earlier in the file.
+    if (cursorLine > start + parsed.lineCount - 1) {
+      continue;
+    }
+
+    return { syntax, text: _Dedent(parsed.text), startLine: start, lineCount: parsed.lineCount };
+  }
+
+  return null;
+}
+
+/**
+ * Removes the indentation the body lines share.
+ *
+ * A marker-led body needs no help: stripping the marker already leaves the
+ * text flush. A block whose body carries no marker at all - the ordinary
+ * HTML comment - keeps whatever indentation the author used, and that would
+ * otherwise be baked into the rewritten block and grow by one level every
+ * time the command runs.
+ */
+// -----------------------------------------------------------------------------
+function _Dedent(text: string): string {
+  const lines = text.split("\n");
+  const widths = lines
+    .filter((line) => line.trim().length > 0)
+    .map((line) => line.length - line.trimStart().length);
+
+  if (widths.length === 0) {
+    return text;
+  }
+
+  const common = Math.min(...widths);
+  return common === 0 ? text : lines.map((line) => line.slice(common)).join("\n");
 }
 
 // -----------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import { ExtensionConfig } from "./Core/Config";
 import {
   ExtractCommentedText,
   FindFancyCommentBlockUsingKnownSyntaxFirst,
+  FindNativeCommentBlock,
   InferFancyCommentLineSyntax,
   ShouldUseVSCodeBlockComment,
 } from "./Core/Commenting";
@@ -145,6 +146,17 @@ export async function ExecuteMultiLineComment(): Promise<void> {
       );
     });
     return;
+  }
+
+  // The caret may be sitting inside the language's own block comment. That
+  // block is what the user sees and means, so it is rewritten whole rather
+  // than having a new comment injected into the middle of it.
+  if (editor.selection.isEmpty) {
+    const native = FindNativeCommentBlock(_ReadAllLines(doc), line, config);
+    if (native !== null) {
+      await _RewriteNativeBlock(editor, native, resolved_syntax, config);
+      return;
+    }
   }
 
   if (ShouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolved_syntax)) {
@@ -393,6 +405,37 @@ function _BuildBlockWithSeparator(
 ): string {
   const block = BuildCommentBlock(syntax, indent, text);
   return `${block}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
+}
+
+/**
+ * Replaces a native comment block with the fancy block carrying the same
+ * content.
+ *
+ * Which delimiters the rewrite uses is the user's call:
+ * `nativeBlockDelimiters` defaults to keeping the block's own, so a C-style
+ * block in a TypeScript file stays a block comment instead of turning into a
+ * run of line comments.
+ */
+// -----------------------------------------------------------------------------
+async function _RewriteNativeBlock(
+  editor: vscode.TextEditor,
+  block: { syntax: Fancy.CommentUtils.CommentSyntax; text: string; startLine: number; lineCount: number },
+  languageSyntax: Fancy.CommentUtils.CommentSyntax | null,
+  config: ExtensionConfig
+): Promise<void> {
+  const last_line = block.startLine + block.lineCount - 1;
+  const indent = _GetIndent(editor.document.lineAt(block.startLine).text);
+  const syntax =
+    config.nativeBlockDelimiters === "languageDefault" && languageSyntax
+      ? languageSyntax
+      : block.syntax;
+
+  await editor.edit((builder) => {
+    builder.replace(
+      new vscode.Range(block.startLine, 0, last_line, editor.document.lineAt(last_line).text.length),
+      _BuildBlockWithSeparator(syntax, indent, block.text, config, indent.length)
+    );
+  });
 }
 
 // -----------------------------------------------------------------------------
