@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="Resources/images/icon.png" alt="Saturno FancyComments" width="160">
+    <img src="Resources/icons/icon.png" alt="Saturno FancyComments" width="160">
 </p>
 
 
@@ -7,7 +7,7 @@
     <a href="https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments/releases/"><img src="https://badgen.net/github/release/SaturnoSoftware/Saturno.VSCode.FancyComments?cache=600" alt="latest release"></a>
     <a href="https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments/commits"><img src="https://badgen.net/github/commits/SaturnoSoftware/Saturno.VSCode.FancyComments?cache=600" alt="commits"></a>
     <a href="./LICENSE.txt"><img src="https://badgen.net/badge/license/GPL--3.0/blue" alt="License: GPL-3.0"></a>
-    <a href="./tests"><img src="https://badgen.net/badge/tests/CI%20verified/green" alt="Tests: CI verified"></a>
+    <a href="./Tests"><img src="https://badgen.net/badge/tests/CI%20verified/green" alt="Tests: CI verified"></a>
     <a href="https://marketplace.visualstudio.com/items?itemName=SaturnoSoftware.saturno-fancy-comments"><img src="https://badgen.net/badge/platform/VS%20Code%20%5E1.88.0/blue" alt="Platform"></a>
 </p>
 
