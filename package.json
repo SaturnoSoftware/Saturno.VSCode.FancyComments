@@ -15,7 +15,7 @@
   "main": "./out/Source/Extension.js",
   "icon": "Resources/icons/icon.png",
   "version": "3.4.0",
-  "build": 37,
+  "build": 38,
   "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.88.0"
