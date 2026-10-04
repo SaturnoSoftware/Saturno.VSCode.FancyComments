@@ -8,6 +8,7 @@ param(
     # release folders beside it alone.
     [string]$PackageOutputDir = (Join-Path $ProjectRoot "__DIST/vsix"),
     [string]$ReleaseName = "vscode-fancy-comments",
+    [int]$BuildNumber = 0,
     # Suffixes the packaged .vsix filename so a development
     # or rc artifact never collides with (or gets mistaken for) the release one
     # in $PackageOutputDir. Default "release" reproduces today's exact filename.
@@ -86,6 +87,9 @@ if ($LASTEXITCODE -ne 0) { throw "Could not create the production VSIX manifest.
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
 if (-not $Manifest.name -or -not $Manifest.version) {
     throw "package.json must declare both `name` and `version` to build the .vsix name."
+}
+if ($BuildNumber -gt 0 -and [int]$Manifest.build -ne $BuildNumber) {
+    throw "Staged package.json build $($Manifest.build) does not match SPB build number $BuildNumber. Run the matching SPB build first."
 }
 # "release" stays unsuffixed, matching every existing
 # artifact name exactly - only a non-release channel adds a segment.
@@ -168,6 +172,9 @@ try {
     $Reader = [System.IO.StreamReader]::new($ArchiveManifest.Open())
     try { $PackagedManifest = $Reader.ReadToEnd() | ConvertFrom-Json }
     finally { $Reader.Dispose() }
+    if ($BuildNumber -gt 0 -and [int]$PackagedManifest.build -ne $BuildNumber) {
+        throw "VSIX package.json build $($PackagedManifest.build) does not match SPB build number $BuildNumber."
+    }
     if ($PackagedManifest.PSObject.Properties.Name -contains "scripts") {
         throw "VSIX contract failed: packaged manifest must not contain scripts or vscode:prepublish."
     }

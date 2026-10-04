@@ -19,6 +19,7 @@ param(
     [string]$ProjectRoot = (Split-Path $PSScriptRoot -Parent),
     [string]$BuildOutputDir = (Join-Path $ProjectRoot "out/build"),
     [string]$ReleaseName = "vscode-fancy-comments",
+    [int]$BuildNumber = 0,
     [ValidateSet("development", "production")]
     [string]$Environment = $(if ($env:SATURNO_BUILD_ENVIRONMENT) { $env:SATURNO_BUILD_ENVIRONMENT } else { "development" }),
     # Naming and path concern only - forwarded by spb, logged here, and
@@ -70,6 +71,9 @@ Copy-Item -Path (Join-Path $ProjectRoot "out") `
     -Destination $BuildOutputDir -Recurse -Force
 
 $Manifest = Get-Content -LiteralPath (Join-Path $ProjectRoot "package.json") -Raw | ConvertFrom-Json
+if ($BuildNumber -gt 0) {
+    $Manifest.build = $BuildNumber
+}
 
 # Scripts/package.ps1 packages this staged directory directly instead of the
 # live repo tree, so a real runtime dependency (package.json "dependencies",
