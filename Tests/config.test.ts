@@ -35,3 +35,28 @@ describe("separatorBlankLines configuration", () => {
     });
   });
 });
+
+describe("preferSingleLineComments configuration", () => {
+  it("prefers line comments by default and accepts an explicit opt-out", () => {
+    assert.strictEqual(DEFAULT_EXTENSION_CONFIG.preferSingleLineComments, true);
+    assert.strictEqual(NormalizeConfig({}).preferSingleLineComments, true);
+    assert.strictEqual(NormalizeConfig({ preferSingleLineComments: false }).preferSingleLineComments, false);
+  });
+
+  it("normalizes non-boolean settings to the safe default", () => {
+    assert.strictEqual(
+      NormalizeConfig({ preferSingleLineComments: "false" as unknown as boolean }).preferSingleLineComments,
+      true
+    );
+  });
+
+  it("declares the setting in the VS Code configuration schema", () => {
+    assert.deepStrictEqual(packageJson.contributes.configuration.properties[
+      "saturno-fancy-comments.preferSingleLineComments"
+    ], {
+      type: "boolean",
+      default: true,
+      description: "Use line-comment syntax for new multiline comment blocks when the language supports it; block-only languages continue to use block comments.",
+    });
+  });
+});

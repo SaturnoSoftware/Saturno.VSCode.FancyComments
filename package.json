@@ -14,7 +14,7 @@
   "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
   "main": "./out/Source/Extension.js",
   "icon": "Resources/icons/icon.png",
-  "version": "3.4.3",
+  "version": "3.4.4",
   "build": 43,
   "license": "GPL-3.0-only",
   "engines": {
@@ -120,6 +120,11 @@
           ],
           "default": "preserve",
           "description": "What to do with the delimiters of an existing block comment when rewriting it. Only differs in languages whose default comment is a line comment, such as TypeScript, C# and Go; in CSS, HTML and JSX both values give the same result."
+        },
+        "saturno-fancy-comments.preferSingleLineComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use line-comment syntax for new multiline comment blocks when the language supports it; block-only languages continue to use block comments."
         },
         "saturno-fancy-comments.commentImplementation": {
           "type": "string",

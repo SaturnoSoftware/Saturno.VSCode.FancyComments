@@ -13,8 +13,8 @@
 const assert = require('assert');
 const vscode = require('vscode');
 
-async function openScratchDoc(content) {
-    const doc = await vscode.workspace.openTextDocument({ content, language: 'javascript' });
+async function openScratchDoc(content, language = 'javascript') {
+    const doc = await vscode.workspace.openTextDocument({ content, language });
     const editor = await vscode.window.showTextDocument(doc);
     return editor;
 }
@@ -39,22 +39,59 @@ async function checkMultiLineComment() {
     await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
     const text = editor.document.getText();
     assert.notStrictEqual(text, 'let y = 2;\n', 'multiLineComment did not change the document');
-    assert.match(text, /\/\*/, `multiLineComment output did not contain a block-comment opener: ${JSON.stringify(text)}`);
+    const lines = text.split(/\r?\n/);
+    assert.deepStrictEqual(lines.slice(0, 3), ['//', '// let y = 2;', '//']);
+    assert.match(lines[3], /^\/\/ ---/, `multiLineComment did not use line comments: ${JSON.stringify(text)}`);
+    assert.doesNotMatch(text, /\/\*/, 'line-capable languages should not get block delimiters by default');
+    await closeActiveEditor();
+}
+
+async function checkSingleLinePreferenceCanBeDisabled() {
+    const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
+    const previousValue = settings.get('preferSingleLineComments', true);
+    await settings.update('preferSingleLineComments', false, vscode.ConfigurationTarget.Global);
+
+    try {
+        const editor = await openScratchDoc('let block = true;\n');
+        editor.selection = new vscode.Selection(0, 0, 0, 0);
+        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+        assert.match(editor.document.getText(), /\/\*/, 'opt-out should retain block-comment formatting');
+        await closeActiveEditor();
+    } finally {
+        await settings.update('preferSingleLineComments', previousValue, vscode.ConfigurationTarget.Global);
+    }
+}
+
+async function checkLinePreferenceFallsBackForBlockOnlyLanguages() {
+    const editor = await openScratchDoc('body { color: red; }\n', 'css');
+    editor.selection = new vscode.Selection(0, 0, 0, 0);
+    await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+    const text = editor.document.getText();
+    assert.match(text, /\/\*/, 'a language without line comments must keep using block comments');
+    assert.match(text, /\*\//, 'the block comment must remain well-formed');
     await closeActiveEditor();
 }
 
 async function checkTabAndMixedIndentAlignment() {
-    for (const indent of ['\t', ' \t  ']) {
-        const editor = await openScratchDoc(`${indent}const aligned = true;\n`);
-        editor.selection = new vscode.Selection(0, indent.length, 0, indent.length);
-        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
-        const lines = editor.document.getText().split(/\r?\n/);
-        assert.deepStrictEqual(
-            lines.slice(0, 3),
-            [`${indent}/*`, `${indent}* const aligned = true;`, `${indent}*/`],
-            `the generated comment lost its ${JSON.stringify(indent)} indentation`
-        );
-        await closeActiveEditor();
+    const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
+    const previousValue = settings.get('preferSingleLineComments', true);
+    await settings.update('preferSingleLineComments', false, vscode.ConfigurationTarget.Global);
+
+    try {
+        for (const indent of ['\t', ' \t  ']) {
+            const editor = await openScratchDoc(`${indent}const aligned = true;\n`);
+            editor.selection = new vscode.Selection(0, indent.length, 0, indent.length);
+            await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+            const lines = editor.document.getText().split(/\r?\n/);
+            assert.deepStrictEqual(
+                lines.slice(0, 3),
+                [`${indent}/*`, `${indent}* const aligned = true;`, `${indent}*/`],
+                `the generated comment lost its ${JSON.stringify(indent)} indentation`
+            );
+            await closeActiveEditor();
+        }
+    } finally {
+        await settings.update('preferSingleLineComments', previousValue, vscode.ConfigurationTarget.Global);
     }
 }
 
@@ -111,7 +148,9 @@ async function checkNativeBlockCanUseLanguageDefaultLineComments() {
 async function checkConfiguredSeparatorSpacingRoundTrips() {
     const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
     const previousValue = settings.get('separatorBlankLines', 0);
+    const previousLinePreference = settings.get('preferSingleLineComments', true);
     await settings.update('separatorBlankLines', 1, vscode.ConfigurationTarget.Global);
+    await settings.update('preferSingleLineComments', false, vscode.ConfigurationTarget.Global);
 
     try {
         const original = 'let spaced = true;\n';
@@ -132,6 +171,7 @@ async function checkConfiguredSeparatorSpacingRoundTrips() {
         await closeActiveEditor();
     } finally {
         await settings.update('separatorBlankLines', previousValue, vscode.ConfigurationTarget.Global);
+        await settings.update('preferSingleLineComments', previousLinePreference, vscode.ConfigurationTarget.Global);
     }
 }
 
@@ -147,6 +187,8 @@ async function main() {
 
     await checkSingleLineComment();
     await checkMultiLineComment();
+    await checkSingleLinePreferenceCanBeDisabled();
+    await checkLinePreferenceFallsBackForBlockOnlyLanguages();
     await checkTabAndMixedIndentAlignment();
     await checkPlainCodeIsNotCollapsed();
     await checkJSDocContentIsPreserved();

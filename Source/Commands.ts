@@ -160,6 +160,30 @@ export async function ExecuteMultiLineComment(): Promise<void> {
     }
   }
 
+  if (config.preferSingleLineComments) {
+    const line_syntax =
+      resolved_syntax?.singleLineEnd === ""
+        ? resolved_syntax
+        : await _ProbeSingleLineCommentSyntax(editor, line, column, line_text);
+    if (line_syntax) {
+      const selection_is_empty = editor.selection.isEmpty;
+      const text = selection_is_empty ? line_text.trim() : doc.getText(editor.selection).trim();
+      const indent = line_text.slice(0, column);
+      const range = selection_is_empty
+        ? new vscode.Range(line, column, line, line_text.length)
+        : editor.selection;
+      const replacement = selection_is_empty
+        ? _BuildBlockTailWithSeparator(line_syntax, indent, text, config, column)
+        : _BuildBlockWithSeparator(line_syntax, _GetIndent(line_text), text, config, column);
+
+      await editor.edit((builder) => builder.replace(range, replacement));
+      if (selection_is_empty) {
+        _PlaceCursorInBlockBody(editor, line, column, line_syntax.multiLineMiddle.length);
+      }
+      return;
+    }
+  }
+
   if (ShouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolved_syntax)) {
     if (await _ApplyMultiLineViaVSCode(editor, line, column, line_text, config)) {
       return;
@@ -378,6 +402,45 @@ async function _ApplyMultiLineViaVSCode(
 
   _PlaceCursorInBlockBody(editor, line, column, extracted.syntax.multiLineMiddle.length);
   return true;
+}
+
+/**
+ * Ask VS Code to line-comment one line, then undo that probe and keep only
+ * the language's line-comment syntax. This covers languages whose comments
+ * are available to the editor command but not discoverable from an extension
+ * language-configuration contribution.
+ */
+// -----------------------------------------------------------------------------
+async function _ProbeSingleLineCommentSyntax(
+  editor: vscode.TextEditor,
+  line: number,
+  column: number,
+  originalLineText: string
+): Promise<Fancy.CommentUtils.CommentSyntax | null> {
+  const original_selection = editor.selection;
+  const original_version = editor.document.version;
+
+  editor.selection = new vscode.Selection(line, column, line, originalLineText.length);
+  await vscode.commands.executeCommand("editor.action.commentLine");
+
+  if (editor.document.version === original_version) {
+    editor.selection = original_selection;
+    return null;
+  }
+
+  const extracted = ExtractCommentedText(
+    editor.document.lineAt(line).text.slice(column),
+    originalLineText.slice(column)
+  );
+
+  await vscode.commands.executeCommand("undo");
+  if (editor.document.lineAt(line).text !== originalLineText) {
+    await _RestoreLine(editor, line, originalLineText, original_selection);
+  } else {
+    editor.selection = original_selection;
+  }
+
+  return extracted?.syntax.singleLineEnd === "" ? extracted.syntax : null;
 }
 
 //

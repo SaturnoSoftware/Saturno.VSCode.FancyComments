@@ -40,6 +40,7 @@ import { DEFAULT_CONFIG, FormattingConfig } from "./Formatting";
 export interface ExtensionConfig extends FormattingConfig {
   commentImplementation: CommentImplementation;
   nativeBlockDelimiters: NativeBlockDelimiters;
+  preferSingleLineComments: boolean;
 }
 
 // -----------------------------------------------------------------------------
@@ -47,6 +48,7 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   ...DEFAULT_CONFIG,
   commentImplementation: "vscode",
   nativeBlockDelimiters: "preserve",
+  preferSingleLineComments: true,
 };
 
 //
@@ -78,5 +80,6 @@ export function NormalizeConfig(config: Partial<ExtensionConfig>): ExtensionConf
     ),
     commentImplementation: NormalizeCommentImplementation(config.commentImplementation),
     nativeBlockDelimiters: NormalizeNativeBlockDelimiters(config.nativeBlockDelimiters),
+    preferSingleLineComments: config.preferSingleLineComments !== false,
   };
 }

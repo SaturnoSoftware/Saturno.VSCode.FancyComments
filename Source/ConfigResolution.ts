@@ -52,5 +52,9 @@ export function GetConfig(): ExtensionConfig {
       "nativeBlockDelimiters",
       DEFAULT_EXTENSION_CONFIG.nativeBlockDelimiters
     ),
+    preferSingleLineComments: cfg.get<boolean>(
+      "preferSingleLineComments",
+      DEFAULT_EXTENSION_CONFIG.preferSingleLineComments
+    ),
   });
 }
