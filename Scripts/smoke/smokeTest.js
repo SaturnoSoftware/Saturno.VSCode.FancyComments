@@ -43,6 +43,21 @@ async function checkMultiLineComment() {
     await closeActiveEditor();
 }
 
+async function checkTabAndMixedIndentAlignment() {
+    for (const indent of ['\t', ' \t  ']) {
+        const editor = await openScratchDoc(`${indent}const aligned = true;\n`);
+        editor.selection = new vscode.Selection(0, indent.length, 0, indent.length);
+        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+        const lines = editor.document.getText().split(/\r?\n/);
+        assert.deepStrictEqual(
+            lines.slice(0, 3),
+            [`${indent}/*`, `${indent}* const aligned = true;`, `${indent}*/`],
+            `the generated comment lost its ${JSON.stringify(indent)} indentation`
+        );
+        await closeActiveEditor();
+    }
+}
+
 async function checkPlainCodeIsNotCollapsed() {
     const editor = await openScratchDoc(
         'const total = items.length;\nconst first = items[0];\nreturn first;\n'
@@ -107,6 +122,7 @@ async function main() {
 
     await checkSingleLineComment();
     await checkMultiLineComment();
+    await checkTabAndMixedIndentAlignment();
     await checkPlainCodeIsNotCollapsed();
     await checkJSDocContentIsPreserved();
     await checkConfiguredSeparatorSpacingRoundTrips();
