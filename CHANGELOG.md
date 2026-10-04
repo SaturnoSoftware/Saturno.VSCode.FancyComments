@@ -6,6 +6,17 @@ Entries before 3.3.0 are reconstructed from the repository's git history: this f
 exist until 2026-09-21, so anything older than the commits it was written from is summarized
 rather than recorded at the time.
 
+## 3.4.2 - 2026-10-04
+
+### Added
+- `saturno-fancy-comments.separatorBlankLines` controls the number of blank lines between a
+  multiline comment block and its separator line. It defaults to `0`, preserving the existing
+  output, and accepts values from `0` to `20`.
+
+### Fixed
+- The lockfile now matches the package version and the pinned TypeScript 5.3.3 dependency, so
+  clean installs no longer resolve TypeScript 5.9.3 against a 5.3.3 package declaration.
+
 ## 3.4.0 - 2026-09-21
 
 ### Changed

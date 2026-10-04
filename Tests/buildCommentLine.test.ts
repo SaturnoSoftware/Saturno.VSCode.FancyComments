@@ -124,7 +124,12 @@ describe("BuildCommentLine with custom config", () => {
   });
 
   it("works with all custom values together", () => {
-    const config: FormattingConfig = { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4 };
+    const config: FormattingConfig = {
+      lineWidth: 100,
+      separatorChar: "=",
+      separatorPrefixLength: 4,
+      separatorBlankLines: 0,
+    };
     const result = BuildCommentLine(cStyleSyntax, "Hello", config);
     assert.strictEqual(result.length, 100);
     assert.ok(result.startsWith("// ==== Hello "));
@@ -145,7 +150,12 @@ describe("BuildCommentLine with custom config", () => {
   });
 
   it("respects custom config with HTML-style syntax", () => {
-    const config: FormattingConfig = { lineWidth: 60, separatorChar: "~", separatorPrefixLength: 2 };
+    const config: FormattingConfig = {
+      lineWidth: 60,
+      separatorChar: "~",
+      separatorPrefixLength: 2,
+      separatorBlankLines: 0,
+    };
     const result = BuildCommentLine(htmlStyleSyntax, "Note", config);
     assert.strictEqual(result.length, 60);
     assert.ok(result.startsWith("<!-- ~~ Note "));

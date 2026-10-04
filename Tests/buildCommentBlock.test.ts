@@ -1,6 +1,14 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { BuildCommentBlock, BuildCommentBlockTail, CommentSyntax } from "../Source/Core/Formatting";
+import {
+  BuildCommentBlock,
+  BuildCommentBlockTail,
+  BuildCommentBlockWithSeparator,
+  BuildCommentBlockTailWithSeparator,
+  BuildCommentLine,
+  CommentSyntax,
+  DEFAULT_CONFIG,
+} from "../Source/Core/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
@@ -106,5 +114,49 @@ describe("BuildCommentBlockTail", () => {
       const lines = BuildCommentBlockTail(cStyleSyntax, indent, "Section").split("\n");
       assert.deepStrictEqual(lines, ["/*", `${indent}* Section`, `${indent}*/`]);
     }
+  });
+});
+
+describe("comment separator spacing", () => {
+  it("preserves the existing adjacent separator layout by default", () => {
+    const lines = BuildCommentBlockWithSeparator(cStyleSyntax, "", "Section").split("\n");
+    assert.deepStrictEqual(lines, [
+      "/*",
+      "* Section",
+      "*/",
+      BuildCommentLine(cStyleSyntax, "", DEFAULT_CONFIG),
+    ]);
+  });
+
+  it("inserts the configured number of blank lines before the separator", () => {
+    const config = { ...DEFAULT_CONFIG, separatorBlankLines: 1 };
+    const lines = BuildCommentBlockWithSeparator(cStyleSyntax, "", "Section", config).split("\n");
+    assert.deepStrictEqual(lines, [
+      "/*",
+      "* Section",
+      "*/",
+      "",
+      BuildCommentLine(cStyleSyntax, "", config),
+    ]);
+  });
+
+  it("retains the editor-owned first-line indentation with configured spacing", () => {
+    const indent = " \t  ";
+    const config = { ...DEFAULT_CONFIG, separatorBlankLines: 2 };
+    const lines = BuildCommentBlockTailWithSeparator(
+      cStyleSyntax,
+      indent,
+      "Section",
+      config,
+      indent.length
+    ).split("\n");
+    assert.deepStrictEqual(lines, [
+      "/*",
+      `${indent}* Section`,
+      `${indent}*/`,
+      "",
+      "",
+      `${indent}${BuildCommentLine(cStyleSyntax, "", config, indent.length)}`,
+    ]);
   });
 });

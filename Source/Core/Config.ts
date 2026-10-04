@@ -70,6 +70,12 @@ export function NormalizeConfig(config: Partial<ExtensionConfig>): ExtensionConf
       20,
       DEFAULT_EXTENSION_CONFIG.separatorPrefixLength
     ),
+    separatorBlankLines: Utils.NormalizeInteger(
+      config.separatorBlankLines,
+      0,
+      20,
+      DEFAULT_EXTENSION_CONFIG.separatorBlankLines
+    ),
     commentImplementation: NormalizeCommentImplementation(config.commentImplementation),
     nativeBlockDelimiters: NormalizeNativeBlockDelimiters(config.nativeBlockDelimiters),
   };

@@ -1,6 +1,13 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { ParseFancyCommentBlock, BuildCommentBlock, BuildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../Source/Core/Formatting";
+import {
+  ParseFancyCommentBlock,
+  BuildCommentBlock,
+  BuildCommentBlockWithSeparator,
+  CommentSyntax,
+  FormattingConfig,
+  DEFAULT_CONFIG,
+} from "../Source/Core/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
@@ -35,9 +42,7 @@ const rawHashSyntax: CommentSyntax = {
 };
 
 function makeFullBlock(syntax: CommentSyntax, indent: string, text: string, config: FormattingConfig = DEFAULT_CONFIG): string[] {
-  const block = BuildCommentBlock(syntax, indent, text);
-  const separator = indent + BuildCommentLine(syntax, "", config);
-  return [...block.split("\n"), separator];
+  return BuildCommentBlockWithSeparator(syntax, indent, text, config).split("\n");
 }
 
 describe("ParseFancyCommentBlock", () => {
@@ -124,10 +129,29 @@ describe("ParseFancyCommentBlock", () => {
 
 describe("ParseFancyCommentBlock with custom config", () => {
   it("detects block with custom separator config", () => {
-    const config: FormattingConfig = { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4 };
+    const config: FormattingConfig = {
+      lineWidth: 100,
+      separatorChar: "=",
+      separatorPrefixLength: 4,
+      separatorBlankLines: 0,
+    };
     const lines = makeFullBlock(cStyleSyntax, "", "Custom", config);
     const result = ParseFancyCommentBlock(lines, cStyleSyntax, config);
     assert.deepStrictEqual(result, { text: "Custom", lineCount: 4 });
+  });
+
+  it("includes configured blank lines before the separator in the parsed block", () => {
+    const config: FormattingConfig = { ...DEFAULT_CONFIG, separatorBlankLines: 2 };
+    const lines = makeFullBlock(cStyleSyntax, "", "Spaced", config);
+
+    assert.deepStrictEqual(ParseFancyCommentBlock(lines, cStyleSyntax, config), {
+      text: "Spaced",
+      lineCount: 6,
+    });
+    assert.deepStrictEqual(ParseFancyCommentBlock(lines, cStyleSyntax), {
+      text: "Spaced",
+      lineCount: 6,
+    });
   });
 
   it("returns 3 lines when separator uses mismatched config", () => {

@@ -43,13 +43,73 @@ async function checkMultiLineComment() {
     await closeActiveEditor();
 }
 
+async function checkPlainCodeIsNotCollapsed() {
+    const editor = await openScratchDoc(
+        'const total = items.length;\nconst first = items[0];\nreturn first;\n'
+    );
+    editor.selection = new vscode.Selection(0, 0, 0, 0);
+    await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+    const text = editor.document.getText();
+    assert.match(text, /const total = items\.length;/, 'the first source line was lost');
+    assert.match(text, /const first = items\[0\];/, 'the second source line was lost');
+    assert.match(text, /return first;/, 'the third source line was lost');
+    await closeActiveEditor();
+}
+
+async function checkJSDocContentIsPreserved() {
+    const editor = await openScratchDoc('/**\n * First sentence.\n * Second sentence.\n */\n');
+    editor.selection = new vscode.Selection(1, 3, 1, 3);
+    await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+    const text = editor.document.getText();
+    assert.match(text, /First sentence\./, 'the first JSDoc line was lost');
+    assert.match(text, /Second sentence\./, 'the second JSDoc line was lost');
+    assert.match(text, /^\/\*\*/, 'the original JSDoc opener was not preserved');
+    assert.match(text, /\*\//, 'the original JSDoc closer was not preserved');
+    await closeActiveEditor();
+}
+
+async function checkConfiguredSeparatorSpacingRoundTrips() {
+    const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
+    const previousValue = settings.get('separatorBlankLines', 0);
+    await settings.update('separatorBlankLines', 1, vscode.ConfigurationTarget.Global);
+
+    try {
+        const original = 'let spaced = true;\n';
+        const editor = await openScratchDoc(original);
+        editor.selection = new vscode.Selection(0, 0, 0, 0);
+        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+
+        const lines = editor.document.getText().split(/\r?\n/);
+        const closerLine = lines.findIndex((line) => line.trim() === '*/');
+        assert.ok(closerLine >= 0, 'the generated block comment has no closer');
+        assert.strictEqual(lines[closerLine + 1], '', 'one blank line should precede the separator');
+        assert.match(lines[closerLine + 2], /^\/\/ ---/, 'the separator should follow the blank line');
+
+        editor.selection = new vscode.Selection(closerLine + 1, 0, closerLine + 1, 0);
+        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+        assert.ok(editor.document.getText().includes('let spaced = true;'), 'toggling lost the original text');
+        assert.doesNotMatch(editor.document.getText(), /^\/\*|^\/\/ ---/m, 'toggling left an orphan block or separator');
+        await closeActiveEditor();
+    } finally {
+        await settings.update('separatorBlankLines', previousValue, vscode.ConfigurationTarget.Global);
+    }
+}
+
 async function main() {
     const ext = vscode.extensions.getExtension('SaturnoSoftware.saturno-fancy-comments');
     assert.ok(ext, 'saturno-fancy-comments is not installed in this profile');
     await ext.activate();
+    const commands = await vscode.commands.getCommands(true);
+    assert.ok(
+        commands.includes('saturno-fancy-comments.dev.reportBug'),
+        'the development-only reportBug command is missing from this DEV package'
+    );
 
     await checkSingleLineComment();
     await checkMultiLineComment();
+    await checkPlainCodeIsNotCollapsed();
+    await checkJSDocContentIsPreserved();
+    await checkConfiguredSeparatorSpacingRoundTrips();
 }
 
 exports.run = function run(_testsRoot, callback) {

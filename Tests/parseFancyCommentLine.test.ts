@@ -158,8 +158,8 @@ describe("ParseFancyCommentLine roundtrip", () => {
   const syntaxes = [cStyleSyntax, htmlStyleSyntax, hashSyntax];
   const configs: FormattingConfig[] = [
     DEFAULT_CONFIG,
-    { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4 },
-    { lineWidth: 60, separatorChar: "~", separatorPrefixLength: 2 },
+    { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4, separatorBlankLines: 0 },
+    { lineWidth: 60, separatorChar: "~", separatorPrefixLength: 2, separatorBlankLines: 0 },
   ];
 
   for (const syntax of syntaxes) {

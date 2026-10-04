@@ -41,8 +41,8 @@ import {
   ShouldUseVSCodeBlockComment,
 } from "./Core/Commenting";
 import {
-  BuildCommentBlock,
-  BuildCommentBlockTail,
+  BuildCommentBlockWithSeparator,
+  BuildCommentBlockTailWithSeparator,
   BuildCommentLine,
   FormattingConfig,
   GetIndentColumn,
@@ -409,8 +409,7 @@ function _BuildBlockWithSeparator(
   config: FormattingConfig,
   column: number
 ): string {
-  const block = BuildCommentBlock(syntax, indent, text);
-  return `${block}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
+  return BuildCommentBlockWithSeparator(syntax, indent, text, config, column);
 }
 
 // The editor range retains `indent` before its start, so only newly created
@@ -424,7 +423,7 @@ function _BuildBlockTailWithSeparator(
   config: FormattingConfig,
   column: number
 ): string {
-  return `${BuildCommentBlockTail(syntax, indent, text)}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
+  return BuildCommentBlockTailWithSeparator(syntax, indent, text, config, column);
 }
 
 /**

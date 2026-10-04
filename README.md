@@ -98,7 +98,8 @@ All settings are available in VS Code Settings UI under **Saturno FancyComments*
 {
   "saturno-fancy-comments.lineWidth": 80,
   "saturno-fancy-comments.separatorChar": "-",
-  "saturno-fancy-comments.separatorPrefixLength": 3
+  "saturno-fancy-comments.separatorPrefixLength": 3,
+  "saturno-fancy-comments.separatorBlankLines": 0
 }
 ```
 
@@ -107,6 +108,7 @@ All settings are available in VS Code Settings UI under **Saturno FancyComments*
 | `lineWidth` | `80` | Total width of generated comment lines (20-200) |
 | `separatorChar` | `"-"` | Character used to fill separator lines (single char) |
 | `separatorPrefixLength` | `3` | Number of separator characters before the text (1-20) |
+| `separatorBlankLines` | `0` | Blank lines between the multiline comment block and its separator line (0-20) |
 
 ### Examples with Different Configs
 

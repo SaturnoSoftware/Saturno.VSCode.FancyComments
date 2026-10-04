@@ -40,6 +40,10 @@ export function GetConfig(): ExtensionConfig {
       "separatorPrefixLength",
       DEFAULT_EXTENSION_CONFIG.separatorPrefixLength
     ),
+    separatorBlankLines: cfg.get<number>(
+      "separatorBlankLines",
+      DEFAULT_EXTENSION_CONFIG.separatorBlankLines
+    ),
     commentImplementation: cfg.get<ExtensionConfig["commentImplementation"]>(
       "commentImplementation",
       DEFAULT_EXTENSION_CONFIG.commentImplementation
