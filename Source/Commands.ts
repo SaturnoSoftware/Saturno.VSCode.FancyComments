@@ -42,6 +42,7 @@ import {
 } from "./Core/Commenting";
 import {
   BuildCommentBlock,
+  BuildCommentBlockTail,
   BuildCommentLine,
   FormattingConfig,
   GetIndentColumn,
@@ -171,13 +172,16 @@ export async function ExecuteMultiLineComment(): Promise<void> {
   }
 
   const text = editor.selection.isEmpty ? line_text.trim() : doc.getText(editor.selection).trim();
-  const indent = _GetIndent(line_text);
+  const indent = line_text.slice(0, column);
   const range = editor.selection.isEmpty
     ? new vscode.Range(line, column, line, line_text.length)
     : editor.selection;
+  const replacement = editor.selection.isEmpty
+    ? _BuildBlockTailWithSeparator(resolved_syntax, indent, text, config, column)
+    : _BuildBlockWithSeparator(resolved_syntax, _GetIndent(line_text), text, config, column);
 
   await editor.edit((builder) => {
-    builder.replace(range, _BuildBlockWithSeparator(resolved_syntax, indent, text, config, column));
+    builder.replace(range, replacement);
   });
 
   _PlaceCursorInBlockBody(editor, line, column, resolved_syntax.multiLineMiddle.length);
@@ -264,14 +268,15 @@ async function _ExecuteMultiCursorMultiLine(
       continue;
     }
 
+    const indent = line_text.slice(0, column);
     replacements.push({
       range: new vscode.Range(line, column, line, line_text.length),
-      value: _BuildBlockWithSeparator(
+      value: _BuildBlockTailWithSeparator(
         syntax,
-        _GetIndent(line_text),
+        indent,
         line_text.trim(),
         config,
-        _GetIndent(line_text).length
+        column
       ),
     });
   }
@@ -362,11 +367,12 @@ async function _ApplyMultiLineViaVSCode(
   }
 
   await vscode.commands.executeCommand("undo");
+  const indent = originalLineText.slice(0, column);
   await _ReplaceLineTail(
     editor,
     line,
     column,
-    _BuildBlockWithSeparator(extracted.syntax, " ".repeat(column), extracted.text, config, column),
+    _BuildBlockTailWithSeparator(extracted.syntax, indent, extracted.text, config, column),
     { undoStopBefore: false, undoStopAfter: true }
   );
 
@@ -405,6 +411,20 @@ function _BuildBlockWithSeparator(
 ): string {
   const block = BuildCommentBlock(syntax, indent, text);
   return `${block}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
+}
+
+// The editor range retains `indent` before its start, so only newly created
+// lines receive it; duplicating it on the first replacement line shifts the
+// opener and breaks tab/mixed indentation alignment.
+// -----------------------------------------------------------------------------
+function _BuildBlockTailWithSeparator(
+  syntax: Fancy.CommentUtils.CommentSyntax,
+  indent: string,
+  text: string,
+  config: FormattingConfig,
+  column: number
+): string {
+  return `${BuildCommentBlockTail(syntax, indent, text)}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
 }
 
 /**

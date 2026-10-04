@@ -86,6 +86,15 @@ export function BuildCommentBlock(syntax: CommentSyntax, indent: string, text: s
   return lines.join("\n");
 }
 
+/**
+ * Builds a block for insertion immediately after an already-retained indent.
+ * The first line omits that indent because the editor range starts after it;
+ * following lines keep the exact whitespace, including tabs and mixed indent.
+ */
+export function BuildCommentBlockTail(syntax: CommentSyntax, indent: string, text: string): string {
+  return BuildCommentBlock(syntax, indent, text).slice(indent.length);
+}
+
 // -----------------------------------------------------------------------------
 export function GetIndentColumn(lineText: string, cursorCharacter: number): number {
   if (lineText.trim().length === 0) {

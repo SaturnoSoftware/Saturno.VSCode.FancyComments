@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { BuildCommentBlock, CommentSyntax } from "../Source/Core/Formatting";
+import { BuildCommentBlock, BuildCommentBlockTail, CommentSyntax } from "../Source/Core/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
@@ -97,5 +97,14 @@ describe("BuildCommentBlock release regressions", () => {
   it("emits one middle line per input line without losing embedded indentation", () => {
     const lines = BuildCommentBlock(cStyleSyntax, "  ", "First\n  Second\n\tThird").split("\n");
     assert.deepStrictEqual(lines, ["  /*", "  * First", "  *   Second", "  * \tThird", "  */"]);
+  });
+});
+
+describe("BuildCommentBlockTail", () => {
+  it("omits only the retained first-line indent and preserves exact whitespace below it", () => {
+    for (const indent of ["    ", "\t", " \t  "]) {
+      const lines = BuildCommentBlockTail(cStyleSyntax, indent, "Section").split("\n");
+      assert.deepStrictEqual(lines, ["/*", `${indent}* Section`, `${indent}*/`]);
+    }
   });
 });
