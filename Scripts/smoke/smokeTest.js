@@ -83,6 +83,31 @@ async function checkJSDocContentIsPreserved() {
     await closeActiveEditor();
 }
 
+async function checkNativeBlockCanUseLanguageDefaultLineComments() {
+    const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
+    const previousValue = settings.get('nativeBlockDelimiters', 'preserve');
+    await settings.update('nativeBlockDelimiters', 'languageDefault', vscode.ConfigurationTarget.Global);
+
+    try {
+        const editor = await openScratchDoc('/**\n * First sentence.\n * Second sentence.\n */\n');
+        editor.selection = new vscode.Selection(1, 5, 1, 5);
+        await vscode.commands.executeCommand('saturno-fancy-comments.multiLineComment');
+
+        const text = editor.document.getText();
+        const lines = text.split(/\r?\n/);
+        assert.deepStrictEqual(
+            lines.slice(0, 4),
+            ['//', '// First sentence.', '// Second sentence.', '//'],
+            'languageDefault should rewrite the native block with the language line-comment syntax'
+        );
+        assert.match(lines[4], /^\/\/ ---/, 'the generated separator should use line-comment syntax too');
+        assert.doesNotMatch(text, /\/\*\*|\*\//, 'the rewritten block should not retain block delimiters');
+        await closeActiveEditor();
+    } finally {
+        await settings.update('nativeBlockDelimiters', previousValue, vscode.ConfigurationTarget.Global);
+    }
+}
+
 async function checkConfiguredSeparatorSpacingRoundTrips() {
     const settings = vscode.workspace.getConfiguration('saturno-fancy-comments');
     const previousValue = settings.get('separatorBlankLines', 0);
@@ -125,6 +150,7 @@ async function main() {
     await checkTabAndMixedIndentAlignment();
     await checkPlainCodeIsNotCollapsed();
     await checkJSDocContentIsPreserved();
+    await checkNativeBlockCanUseLanguageDefaultLineComments();
     await checkConfiguredSeparatorSpacingRoundTrips();
 }
 
