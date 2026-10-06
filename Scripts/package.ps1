@@ -13,7 +13,8 @@ param(
     # or rc artifact never collides with (or gets mistaken for) the release one
     # in $PackageOutputDir. Default "release" reproduces today's exact filename.
     [ValidateSet("development", "rc", "release")]
-    [string]$BuildChannel = "release"
+    [string]$BuildChannel = "release",
+    [string]$StepResultPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -201,6 +202,11 @@ if ($Stray) {
 }
 
 Remove-Item -LiteralPath $StagingRoot -Recurse -Force
+
+if (-not [string]::IsNullOrWhiteSpace($StepResultPath)) {
+    @{ schema = "saturno-spb-step-result/v1"; step = "package"; status = "success"; artifacts = @($Vsix.Name) } |
+        ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $StepResultPath -Encoding utf8
+}
 
 Write-Host ("==> Packaged: {0} ({1} KB)" -f $Vsix.Name, [math]::Round($Vsix.Length / 1KB))
 Write-Host "==> Done"

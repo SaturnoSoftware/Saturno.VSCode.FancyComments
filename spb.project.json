@@ -1,0 +1,7 @@
+{
+  "schema": "saturno-spb-project/v2",
+  "platform": "vscode-vsix",
+  "publication": {
+    "github_release": true
+  }
+}

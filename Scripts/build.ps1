@@ -27,7 +27,8 @@ param(
     # Does NOT affect what this script compiles or strips; that stays governed
     # by -Environment above, unchanged.
     [ValidateSet("development", "rc", "release")]
-    [string]$BuildChannel = "release"
+    [string]$BuildChannel = "release",
+    [string]$StepResultPath
 )
 
 # Development-only code lives in Source/dev and is excluded
@@ -176,6 +177,11 @@ foreach ($AssetName in @("about.html", "about.css")) {
     Copy-Item -LiteralPath (Join-Path $AboutPageSource $AssetName) `
         -Destination (Join-Path $AboutPageDest $AssetName) `
         -Force
+}
+
+if (-not [string]::IsNullOrWhiteSpace($StepResultPath)) {
+    @{ schema = "saturno-spb-step-result/v1"; step = "build"; status = "success"; artifacts = @("package.json") } |
+        ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $StepResultPath -Encoding utf8
 }
 
 Write-Host "==> Done"
