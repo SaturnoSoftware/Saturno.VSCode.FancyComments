@@ -64,12 +64,24 @@ describe("extension packaging assets", () => {
     }
   });
 
-  it("stages the About assets into the build output", () => {
-    const buildScript = readRepositoryFile("Scripts/build.ps1");
+  it("declares the About assets for the SPB VSIX driver to stage", () => {
+    // Scripts/build.ps1 is a generic v2 hook since "Use central VSIX driver"
+    // (08be92c) - it no longer names these paths itself. The declaration
+    // that actually drives staging now lives in spb.project.json.
+    const spbProject = JSON.parse(readRepositoryFile("spb.project.json")) as {
+      driver: { extra_stage_items: Array<{ source: string; destination: string }> };
+    };
+    const extraStageItems = spbProject.driver.extra_stage_items;
 
-    assert.match(buildScript, /Libraries\/Saturno\.VSCode\.FancyLib\/Source\/AboutPage/);
-    assert.match(buildScript, /Resources\/AboutPage/);
-    assert.match(buildScript, /"about\.html", "about\.css"/);
+    for (const expected of [
+      { source: "Libraries/Saturno.VSCode.FancyLib/Source/AboutPage/about.html", destination: "Resources/AboutPage" },
+      { source: "Libraries/Saturno.VSCode.FancyLib/Source/AboutPage/about.css", destination: "Resources/AboutPage" },
+    ]) {
+      assert.ok(
+        extraStageItems.some((item) => item.source === expected.source && item.destination === expected.destination),
+        `spb.project.json must declare extra_stage_items staging ${expected.source} into ${expected.destination}`
+      );
+    }
   });
 
   it("has the About assets present in the staged tree when a build has run", () => {
