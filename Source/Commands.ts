@@ -41,7 +41,8 @@ import {
   ShouldUseVSCodeBlockComment,
 } from "./Core/Commenting";
 import {
-  BuildCommentBlock,
+  BuildCommentBlockWithSeparator,
+  BuildCommentBlockTailWithSeparator,
   BuildCommentLine,
   FormattingConfig,
   GetIndentColumn,
@@ -159,6 +160,30 @@ export async function ExecuteMultiLineComment(): Promise<void> {
     }
   }
 
+  if (config.preferSingleLineComments) {
+    const line_syntax =
+      resolved_syntax?.singleLineEnd === ""
+        ? resolved_syntax
+        : await _ProbeSingleLineCommentSyntax(editor, line, column, line_text);
+    if (line_syntax) {
+      const selection_is_empty = editor.selection.isEmpty;
+      const text = selection_is_empty ? line_text.trim() : doc.getText(editor.selection).trim();
+      const indent = line_text.slice(0, column);
+      const range = selection_is_empty
+        ? new vscode.Range(line, column, line, line_text.length)
+        : editor.selection;
+      const replacement = selection_is_empty
+        ? _BuildBlockTailWithSeparator(line_syntax, indent, text, config, column)
+        : _BuildBlockWithSeparator(line_syntax, _GetIndent(line_text), text, config, column);
+
+      await editor.edit((builder) => builder.replace(range, replacement));
+      if (selection_is_empty) {
+        _PlaceCursorInBlockBody(editor, line, column, line_syntax.multiLineMiddle.length);
+      }
+      return;
+    }
+  }
+
   if (ShouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolved_syntax)) {
     if (await _ApplyMultiLineViaVSCode(editor, line, column, line_text, config)) {
       return;
@@ -171,13 +196,16 @@ export async function ExecuteMultiLineComment(): Promise<void> {
   }
 
   const text = editor.selection.isEmpty ? line_text.trim() : doc.getText(editor.selection).trim();
-  const indent = _GetIndent(line_text);
+  const indent = line_text.slice(0, column);
   const range = editor.selection.isEmpty
     ? new vscode.Range(line, column, line, line_text.length)
     : editor.selection;
+  const replacement = editor.selection.isEmpty
+    ? _BuildBlockTailWithSeparator(resolved_syntax, indent, text, config, column)
+    : _BuildBlockWithSeparator(resolved_syntax, _GetIndent(line_text), text, config, column);
 
   await editor.edit((builder) => {
-    builder.replace(range, _BuildBlockWithSeparator(resolved_syntax, indent, text, config, column));
+    builder.replace(range, replacement);
   });
 
   _PlaceCursorInBlockBody(editor, line, column, resolved_syntax.multiLineMiddle.length);
@@ -264,14 +292,15 @@ async function _ExecuteMultiCursorMultiLine(
       continue;
     }
 
+    const indent = line_text.slice(0, column);
     replacements.push({
       range: new vscode.Range(line, column, line, line_text.length),
-      value: _BuildBlockWithSeparator(
+      value: _BuildBlockTailWithSeparator(
         syntax,
-        _GetIndent(line_text),
+        indent,
         line_text.trim(),
         config,
-        _GetIndent(line_text).length
+        column
       ),
     });
   }
@@ -362,16 +391,56 @@ async function _ApplyMultiLineViaVSCode(
   }
 
   await vscode.commands.executeCommand("undo");
+  const indent = originalLineText.slice(0, column);
   await _ReplaceLineTail(
     editor,
     line,
     column,
-    _BuildBlockWithSeparator(extracted.syntax, " ".repeat(column), extracted.text, config, column),
+    _BuildBlockTailWithSeparator(extracted.syntax, indent, extracted.text, config, column),
     { undoStopBefore: false, undoStopAfter: true }
   );
 
   _PlaceCursorInBlockBody(editor, line, column, extracted.syntax.multiLineMiddle.length);
   return true;
+}
+
+/**
+ * Ask VS Code to line-comment one line, then undo that probe and keep only
+ * the language's line-comment syntax. This covers languages whose comments
+ * are available to the editor command but not discoverable from an extension
+ * language-configuration contribution.
+ */
+// -----------------------------------------------------------------------------
+async function _ProbeSingleLineCommentSyntax(
+  editor: vscode.TextEditor,
+  line: number,
+  column: number,
+  originalLineText: string
+): Promise<Fancy.CommentUtils.CommentSyntax | null> {
+  const original_selection = editor.selection;
+  const original_version = editor.document.version;
+
+  editor.selection = new vscode.Selection(line, column, line, originalLineText.length);
+  await vscode.commands.executeCommand("editor.action.commentLine");
+
+  if (editor.document.version === original_version) {
+    editor.selection = original_selection;
+    return null;
+  }
+
+  const extracted = ExtractCommentedText(
+    editor.document.lineAt(line).text.slice(column),
+    originalLineText.slice(column)
+  );
+
+  await vscode.commands.executeCommand("undo");
+  if (editor.document.lineAt(line).text !== originalLineText) {
+    await _RestoreLine(editor, line, originalLineText, original_selection);
+  } else {
+    editor.selection = original_selection;
+  }
+
+  return extracted?.syntax.singleLineEnd === "" ? extracted.syntax : null;
 }
 
 //
@@ -403,8 +472,21 @@ function _BuildBlockWithSeparator(
   config: FormattingConfig,
   column: number
 ): string {
-  const block = BuildCommentBlock(syntax, indent, text);
-  return `${block}\n${indent}${BuildCommentLine(syntax, "", config, column)}`;
+  return BuildCommentBlockWithSeparator(syntax, indent, text, config, column);
+}
+
+// The editor range retains `indent` before its start, so only newly created
+// lines receive it; duplicating it on the first replacement line shifts the
+// opener and breaks tab/mixed indentation alignment.
+// -----------------------------------------------------------------------------
+function _BuildBlockTailWithSeparator(
+  syntax: Fancy.CommentUtils.CommentSyntax,
+  indent: string,
+  text: string,
+  config: FormattingConfig,
+  column: number
+): string {
+  return BuildCommentBlockTailWithSeparator(syntax, indent, text, config, column);
 }
 
 /**

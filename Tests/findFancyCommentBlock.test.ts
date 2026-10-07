@@ -1,6 +1,14 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { FindFancyCommentBlock, BuildCommentBlock, BuildCommentLine, CommentSyntax, FormattingConfig, DEFAULT_CONFIG } from "../Source/Core/Formatting";
+import {
+  FindFancyCommentBlock,
+  BuildCommentBlock,
+  BuildCommentBlockWithSeparator,
+  BuildCommentLine,
+  CommentSyntax,
+  FormattingConfig,
+  DEFAULT_CONFIG,
+} from "../Source/Core/Formatting";
 
 const cStyleSyntax: CommentSyntax = {
   singleLineStart: "//",
@@ -27,9 +35,7 @@ const hashSyntax: CommentSyntax = {
 };
 
 function makeDocument(syntax: CommentSyntax, indent: string, text: string, config: FormattingConfig = DEFAULT_CONFIG): string[] {
-  const block = BuildCommentBlock(syntax, indent, text);
-  const separator = indent + BuildCommentLine(syntax, "", config);
-  return [...block.split("\n"), separator];
+  return BuildCommentBlockWithSeparator(syntax, indent, text, config).split("\n");
 }
 
 describe("FindFancyCommentBlock - cursor on different lines", () => {
@@ -163,12 +169,30 @@ describe("FindFancyCommentBlock - custom config", () => {
   });
 
   it("detects block with separatorChar '=' and custom width", () => {
-    const config: FormattingConfig = { lineWidth: 100, separatorChar: "=", separatorPrefixLength: 4 };
+    const config: FormattingConfig = {
+      lineWidth: 100,
+      separatorChar: "=",
+      separatorPrefixLength: 4,
+      separatorBlankLines: 0,
+    };
     const lines = makeDocument(cStyleSyntax, "", "Equals", config);
 
     const result = FindFancyCommentBlock(lines, 3, cStyleSyntax, config);
     assert.notStrictEqual(result, null);
     assert.strictEqual(result!.text, "Equals");
+  });
+
+  it("recognizes the separator and blank gap as part of a block when the cursor is on either", () => {
+    const config: FormattingConfig = { ...DEFAULT_CONFIG, separatorBlankLines: 2 };
+    const lines = makeDocument(cStyleSyntax, "", "Spaced", config);
+
+    for (const cursor of [3, 4, 5]) {
+      assert.deepStrictEqual(FindFancyCommentBlock(lines, cursor, cStyleSyntax, config), {
+        text: "Spaced",
+        startLine: 0,
+        lineCount: 6,
+      });
+    }
   });
 
   it("does not detect when config mismatches separator line", () => {

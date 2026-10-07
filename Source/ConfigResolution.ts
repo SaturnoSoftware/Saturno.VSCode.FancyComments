@@ -40,6 +40,10 @@ export function GetConfig(): ExtensionConfig {
       "separatorPrefixLength",
       DEFAULT_EXTENSION_CONFIG.separatorPrefixLength
     ),
+    separatorBlankLines: cfg.get<number>(
+      "separatorBlankLines",
+      DEFAULT_EXTENSION_CONFIG.separatorBlankLines
+    ),
     commentImplementation: cfg.get<ExtensionConfig["commentImplementation"]>(
       "commentImplementation",
       DEFAULT_EXTENSION_CONFIG.commentImplementation
@@ -47,6 +51,10 @@ export function GetConfig(): ExtensionConfig {
     nativeBlockDelimiters: cfg.get<ExtensionConfig["nativeBlockDelimiters"]>(
       "nativeBlockDelimiters",
       DEFAULT_EXTENSION_CONFIG.nativeBlockDelimiters
+    ),
+    preferSingleLineComments: cfg.get<boolean>(
+      "preferSingleLineComments",
+      DEFAULT_EXTENSION_CONFIG.preferSingleLineComments
     ),
   });
 }

@@ -37,6 +37,7 @@ export interface FormattingConfig {
   lineWidth: number;
   separatorChar: string;
   separatorPrefixLength: number;
+  separatorBlankLines: number;
 }
 
 // -----------------------------------------------------------------------------
@@ -44,7 +45,10 @@ export const DEFAULT_CONFIG: FormattingConfig = {
   lineWidth: 80,
   separatorChar: "-",
   separatorPrefixLength: 3,
+  separatorBlankLines: 0,
 };
+
+const MAX_SEPARATOR_BLANK_LINES = 20;
 
 
 //
@@ -84,6 +88,47 @@ export function BuildCommentBlock(syntax: CommentSyntax, indent: string, text: s
   ];
 
   return lines.join("\n");
+}
+
+/**
+ * Builds a block for insertion immediately after an already-retained indent.
+ * The first line omits that indent because the editor range starts after it;
+ * following lines keep the exact whitespace, including tabs and mixed indent.
+ */
+export function BuildCommentBlockTail(syntax: CommentSyntax, indent: string, text: string): string {
+  return BuildCommentBlock(syntax, indent, text).slice(indent.length);
+}
+
+/** Builds a fancy block and its separator, with configurable blank lines between them. */
+export function BuildCommentBlockWithSeparator(
+  syntax: CommentSyntax,
+  indent: string,
+  text: string,
+  config: FormattingConfig = DEFAULT_CONFIG,
+  startColumn = 0
+): string {
+  return `${BuildCommentBlock(syntax, indent, text)}${_SeparatorGap(config)}${indent}${BuildCommentLine(
+    syntax,
+    "",
+    config,
+    startColumn
+  )}`;
+}
+
+/** Like BuildCommentBlockWithSeparator, but leaves the first-line indent to the editor. */
+export function BuildCommentBlockTailWithSeparator(
+  syntax: CommentSyntax,
+  indent: string,
+  text: string,
+  config: FormattingConfig = DEFAULT_CONFIG,
+  startColumn = 0
+): string {
+  return `${BuildCommentBlockTail(syntax, indent, text)}${_SeparatorGap(config)}${indent}${BuildCommentLine(
+    syntax,
+    "",
+    config,
+    startColumn
+  )}`;
 }
 
 // -----------------------------------------------------------------------------
@@ -199,10 +244,21 @@ export function ParseFancyCommentBlock(
   }
 
   const text = textLines.join("\n");
-  if (lines.length > endLine + 1) {
-    const separatorParsed = ParseFancyCommentLine(lines[endLine + 1], syntax, config);
+  let separatorLine = endLine + 1;
+  let blankLinesBeforeSeparator = 0;
+  while (
+    separatorLine < lines.length &&
+    blankLinesBeforeSeparator < MAX_SEPARATOR_BLANK_LINES &&
+    lines[separatorLine].trim().length === 0
+  ) {
+    separatorLine++;
+    blankLinesBeforeSeparator++;
+  }
+
+  if (separatorLine < lines.length) {
+    const separatorParsed = ParseFancyCommentLine(lines[separatorLine], syntax, config);
     if (separatorParsed !== null && separatorParsed.text === "") {
-      return { text, lineCount: endLine + 2 };
+      return { text, lineCount: separatorLine + 1 };
     }
   }
 
@@ -221,8 +277,8 @@ export function FindFancyCommentBlock(
   config: FormattingConfig = DEFAULT_CONFIG
 ): { text: string; startLine: number; lineCount: number } | null {
   syntax = _NormalizeMultiLineSyntax(syntax);
-  // Search backwards from cursor (max 3 lines back) for multiLineStart
-  const searchStart = Math.max(0, cursorLine - 3);
+  // Include the longest supported separator gap when searching back from it.
+  const searchStart = Math.max(0, cursorLine - (3 + MAX_SEPARATOR_BLANK_LINES));
 
   for (let i = cursorLine; i >= searchStart; i--) {
     if (lines[i].trimStart() !== syntax.multiLineStart) {
@@ -258,6 +314,15 @@ function _IsAllChar(text: string, expectedChar: string): boolean {
     }
   }
   return true;
+}
+
+// -----------------------------------------------------------------------------
+function _SeparatorGap(config: FormattingConfig): string {
+  const requested = config.separatorBlankLines;
+  const blankLines = Number.isFinite(requested)
+    ? Math.max(0, Math.min(MAX_SEPARATOR_BLANK_LINES, Math.floor(requested)))
+    : DEFAULT_CONFIG.separatorBlankLines;
+  return "\n".repeat(blankLines + 1);
 }
 
 // -----------------------------------------------------------------------------

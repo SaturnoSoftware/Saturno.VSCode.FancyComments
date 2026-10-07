@@ -14,8 +14,8 @@
   "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
   "main": "./out/Source/Extension.js",
   "icon": "Resources/icons/icon.png",
-  "version": "3.4.0",
-  "build": 34,
+  "version": "4.0.0",
+  "build": 43,
   "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.88.0"
@@ -101,6 +101,13 @@
           "maximum": 20,
           "description": "Number of separator characters before the text."
         },
+        "saturno-fancy-comments.separatorBlankLines": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 20,
+          "description": "Number of blank lines between a multiline comment block and its separator line."
+        },
         "saturno-fancy-comments.nativeBlockDelimiters": {
           "type": "string",
           "enum": [
@@ -113,6 +120,11 @@
           ],
           "default": "preserve",
           "description": "What to do with the delimiters of an existing block comment when rewriting it. Only differs in languages whose default comment is a line comment, such as TypeScript, C# and Go; in CSS, HTML and JSX both values give the same result."
+        },
+        "saturno-fancy-comments.preferSingleLineComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use line-comment syntax for new multiline comment blocks when the language supports it; block-only languages continue to use block comments."
         },
         "saturno-fancy-comments.commentImplementation": {
           "type": "string",
