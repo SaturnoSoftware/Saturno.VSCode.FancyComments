@@ -1,0 +1,188 @@
+{
+  "name": "saturno-fancy-comments",
+  "displayName": "Saturno FancyComments",
+  "description": "Create customized comments without formatting everything manually.",
+  "publisher": "SaturnoSoftware",
+  "author": "mateusdigital <hello@mateus.digital>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments/issues"
+  },
+  "homepage": "https://github.com/SaturnoSoftware/Saturno.VSCode.FancyComments#readme",
+  "main": "./out/Source/Extension.js",
+  "icon": "Resources/icons/icon.png",
+  "version": "4.0.0",
+  "build": 45,
+  "license": "GPL-3.0-only",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "comments",
+    "comment",
+    "separator",
+    "section",
+    "banner",
+    "divider",
+    "formatting",
+    "productivity",
+    "toggle",
+    "multiline",
+    "documentation"
+  ],
+  "galleryBanner": {
+    "color": "#1F2937",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "qna": "marketplace",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "saturno-fancy-comments.singleLineComment",
+        "title": "Saturno: Single Line Comment"
+      },
+      {
+        "command": "saturno-fancy-comments.multiLineComment",
+        "title": "Saturno: Multi Line Comment"
+      },
+      {
+        "command": "saturno-fancy-comments.about",
+        "title": "Saturno: About FancyComments"
+      },
+      {
+        "command": "saturno-fancy-comments.dev.reportBug",
+        "title": "Saturno DEV: Report Bug (Open Bug panel)",
+        "category": "Saturno DEV"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "saturno-fancy-comments.dev.reportBug",
+          "when": "saturnoFancyComments.devMode"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Saturno FancyComments",
+      "properties": {
+        "saturno-fancy-comments.lineWidth": {
+          "type": "integer",
+          "default": 80,
+          "minimum": 20,
+          "maximum": 200,
+          "description": "Total width of generated comment lines."
+        },
+        "saturno-fancy-comments.separatorChar": {
+          "type": "string",
+          "default": "-",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "Character used to fill separator lines."
+        },
+        "saturno-fancy-comments.separatorPrefixLength": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Number of separator characters before the text."
+        },
+        "saturno-fancy-comments.separatorBlankLines": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 20,
+          "description": "Number of blank lines between a multiline comment block and its separator line."
+        },
+        "saturno-fancy-comments.nativeBlockDelimiters": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "languageDefault"
+          ],
+          "enumDescriptions": [
+            "Keep the block's own delimiters, so a C-style block stays a C-style block.",
+            "Rewrite the block with the language's default comment syntax."
+          ],
+          "default": "preserve",
+          "description": "What to do with the delimiters of an existing block comment when rewriting it. Only differs in languages whose default comment is a line comment, such as TypeScript, C# and Go; in CSS, HTML and JSX both values give the same result."
+        },
+        "saturno-fancy-comments.preferSingleLineComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use line-comment syntax for new multiline comment blocks when the language supports it; block-only languages continue to use block comments."
+        },
+        "saturno-fancy-comments.commentImplementation": {
+          "type": "string",
+          "enum": [
+            "vscode",
+            "syntax"
+          ],
+          "default": "vscode",
+          "description": "Choose whether FancyComments uses VS Code's built-in comment commands or the internal syntax resolver."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "pwsh -NoLogo -NoProfile -Command \"if (Test-Path -LiteralPath ./out) { Remove-Item -LiteralPath ./out -Recurse -Force }\" && tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint Source Libraries Tests --ext ts",
+    "test": "npm run compile && tsc -p Tests/tsconfig.json && tsc -p Libraries/Saturno.VSCode.FancyLib/Tests/tsconfig.json && node --test out-tests/Tests/*.test.js Libraries/Saturno.VSCode.FancyLib/out/Tests/*.test.js",
+    "build": "npm run lint && npm run compile && pwsh -NoLogo -NoProfile -File ./Scripts/build.ps1 -ProjectRoot . -BuildOutputDir __BUILD/_staging",
+    "package": "pwsh -NoLogo -NoProfile -File ./Scripts/package.ps1 -BuildOutputDir __BUILD/_staging",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "18.x",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "@vscode/vsce": "^3.0.0",
+    "eslint": "^8.57.0",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "json5": "^2.2.3"
+  },
+  "vsce": {
+    "baseImagesUrl": "https://raw.githubusercontent.com/SaturnoSoftware/Saturno.VSCode.FancyComments/main/"
+  },
+  "saturno": {
+    "cicd": {
+      "artifactPrefix": "Saturno.VSCode.FancyComments",
+      "build": {
+        "stagingRoot": "__BUILD/_staging",
+        "expectedFiles": [
+          "package.json",
+          "out/Source/Extension.js",
+          "Resources/AboutPage/about.html",
+          "Resources/AboutPage/about.css",
+          "Resources/icons/icon.png"
+        ],
+        "expectedDirectories": [
+          "out/Libraries"
+        ]
+      },
+      "release": {
+        "assets": [
+          "*.vsix"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+out
+out-tests
+dist
+node_modules
+.vscode-test/
+*.vsix
+__BUILD/
+__DIST/
+.claude/

@@ -1,0 +1,18 @@
+{
+  "schema": "saturno-spb-project/v2",
+  "platform": "vscode-vsix",
+  "driver": {
+    "tsconfig_development": "./tsconfig.json",
+    "tsconfig_production": "./tsconfig.prod.json",
+    "stage_items": ["LICENSE.txt", "README.md", "CHANGELOG.md", ".vscodeignore", "Resources"],
+    "extra_stage_items": [
+      { "source": "Libraries/Saturno.VSCode.FancyLib/Source/AboutPage/about.html", "destination": "Resources/AboutPage" },
+      { "source": "Libraries/Saturno.VSCode.FancyLib/Source/AboutPage/about.css", "destination": "Resources/AboutPage" }
+    ],
+    "package_items": ["package.json", "out", "Resources", "README.md", "CHANGELOG.md", "LICENSE.txt", ".vscodeignore"]
+  },
+  "publication": {
+    "github_release": true,
+    "vscode_marketplace": true
+  }
+}
