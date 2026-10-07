@@ -12,6 +12,7 @@
     "package_items": ["package.json", "out", "Resources", "README.md", "CHANGELOG.md", "LICENSE.txt"]
   },
   "publication": {
-    "github_release": true
+    "github_release": true,
+    "vscode_marketplace": true
   }
 }
