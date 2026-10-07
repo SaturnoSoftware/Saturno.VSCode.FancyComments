@@ -1,27 +1,28 @@
 param(
-    [string]$ProjectRoot = (Split-Path $PSScriptRoot -Parent),
-    [string]$BuildOutputDir = (Join-Path $ProjectRoot "out/build"),
+    [string]$ProjectRoot,
+    [string]$BuildOutputDir,
     # NOT under out/: `vscode:prepublish` runs `compile`, which deletes ./out
     # recursively. vsce triggers prepublish itself, so anything this script creates
     # under out/ is gone by the time vsce writes.
     # A dedicated subdirectory of __DIST is safe to wipe and leaves the versioned
     # release folders beside it alone.
-    [string]$PackageOutputDir = (Join-Path $ProjectRoot "__DIST/vsix"),
-    [string]$ReleaseName = "vscode-fancy-comments",
-    [int]$BuildNumber = 0,
+    [string]$PackageOutputDir,
+    [string]$ReleaseName,
+    [int]$BuildNumber,
     # Suffixes the packaged .vsix filename so a development
     # or rc artifact never collides with (or gets mistaken for) the release one
     # in $PackageOutputDir. Default "release" reproduces today's exact filename.
     [ValidateSet("development", "rc", "release")]
-    [string]$BuildChannel = "release",
+    [string]$BuildChannel,
     [string]$StepResultPath
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($ProjectRoot) -or [string]::IsNullOrWhiteSpace($BuildOutputDir) -or [string]::IsNullOrWhiteSpace($PackageOutputDir) -or [string]::IsNullOrWhiteSpace($ReleaseName) -or [string]::IsNullOrWhiteSpace($StepResultPath)) {
+    throw "SPB must provide project paths, release name and step result path."
+}
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
 $PackageOutputDir = [System.IO.Path]::GetFullPath($PackageOutputDir)
-
-Write-Host "==> Packaging: $ReleaseName"
 
 # Packaged from the staged build output, not the live repo tree: that staged
 # package.json is already the environment-correct manifest (dev commands
@@ -34,9 +35,6 @@ if (-not (Test-Path -LiteralPath $BuildOutputDir -PathType Container)) {
     throw "No staged build output found at $BuildOutputDir. Run the build step first."
 }
 $BuildOutputDir = (Resolve-Path -LiteralPath $BuildOutputDir).ProviderPath
-
-Remove-Item -LiteralPath $PackageOutputDir -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $PackageOutputDir | Out-Null
 
 $StagingRoot = Join-Path ([System.IO.Path]::GetTempPath()) "saturno-vsix/$ReleaseName"
 Remove-Item -LiteralPath $StagingRoot -Recurse -Force -ErrorAction SilentlyContinue

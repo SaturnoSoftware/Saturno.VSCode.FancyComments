@@ -16,18 +16,18 @@
 ## -------------------------------------------------------------------------- ##
 
 param(
-    [string]$ProjectRoot = (Split-Path $PSScriptRoot -Parent),
-    [string]$BuildOutputDir = (Join-Path $ProjectRoot "out/build"),
-    [string]$ReleaseName = "vscode-fancy-comments",
-    [int]$BuildNumber = 0,
+    [string]$ProjectRoot,
+    [string]$BuildOutputDir,
+    [string]$ReleaseName,
+    [int]$BuildNumber,
     [ValidateSet("development", "production")]
-    [string]$Environment = $(if ($env:SATURNO_BUILD_ENVIRONMENT) { $env:SATURNO_BUILD_ENVIRONMENT } else { "development" }),
+    [string]$Environment,
     # Naming and path concern only - forwarded by spb, logged here, and
     # consumed by Scripts/package.ps1 to suffix the packaged .vsix.
     # Does NOT affect what this script compiles or strips; that stays governed
     # by -Environment above, unchanged.
     [ValidateSet("development", "rc", "release")]
-    [string]$BuildChannel = "release",
+    [string]$BuildChannel,
     [string]$StepResultPath
 )
 
@@ -39,15 +39,10 @@ param(
 # as not shipping it.
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($ProjectRoot) -or [string]::IsNullOrWhiteSpace($BuildOutputDir) -or [string]::IsNullOrWhiteSpace($StepResultPath)) {
+    throw "SPB must provide project root, build output and step result path."
+}
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
-
-## -----------------------------------------------------------------------------
-Write-Host "==> Building: $ReleaseName"
-Write-Host "==> Environment: $Environment"
-Write-Host "==> Build channel: $BuildChannel"
-
-Remove-Item -LiteralPath $BuildOutputDir -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $BuildOutputDir | Out-Null
 # A production build must never inherit a prior dev compile's output - out/
 # is wiped unconditionally before every compile, dev or prod, precisely so
 # neither environment can carry the other's stale artifacts forward.
