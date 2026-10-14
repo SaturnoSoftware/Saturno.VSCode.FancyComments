@@ -45,7 +45,7 @@ import {
   BuildCommentBlockTailWithSeparator,
   BuildCommentLine,
   FormattingConfig,
-  GetIndentColumn,
+  GetIndentPosition,
   ParseFancyCommentLine,
 } from "./Core/Formatting";
 
@@ -77,7 +77,9 @@ export async function ExecuteSingleLineComment(): Promise<void> {
 
   const line = editor.selection.start.line;
   const line_text = editor.document.lineAt(line).text;
-  const column = GetIndentColumn(line_text, editor.selection.start.character);
+  const indent_position = GetIndentPosition(line_text, editor.selection.start.character, _GetTabSize(editor));
+  const character_column = indent_position.character;
+  const visual_column = indent_position.visualColumn;
   const resolved_syntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
 
   // Uncommenting comes first: a line that is already fancy toggles back to
@@ -86,13 +88,13 @@ export async function ExecuteSingleLineComment(): Promise<void> {
   if (existing_syntax) {
     const parsed = ParseFancyCommentLine(line_text, existing_syntax, config);
     if (parsed !== null) {
-      await _ReplaceLineTail(editor, line, column, parsed.text);
+      await _ReplaceLineTail(editor, line, character_column, parsed.text);
       return;
     }
   }
 
   if (config.commentImplementation === "vscode") {
-    if (await _ApplySingleLineViaVSCode(editor, line, column, line_text, config)) {
+    if (await _ApplySingleLineViaVSCode(editor, line, character_column, visual_column, line_text, config)) {
       return;
     }
   }
@@ -105,8 +107,8 @@ export async function ExecuteSingleLineComment(): Promise<void> {
   await _ReplaceLineTail(
     editor,
     line,
-    column,
-    BuildCommentLine(resolved_syntax, line_text.trim(), config, column)
+    character_column,
+    BuildCommentLine(resolved_syntax, line_text.trim(), config, visual_column)
   );
 }
 
@@ -127,7 +129,9 @@ export async function ExecuteMultiLineComment(): Promise<void> {
   const doc = editor.document;
   const line = editor.selection.start.line;
   const line_text = doc.lineAt(line).text;
-  const column = GetIndentColumn(line_text, editor.selection.start.character);
+  const indent_position = GetIndentPosition(line_text, editor.selection.start.character, _GetTabSize(editor));
+  const character_column = indent_position.character;
+  const visual_column = indent_position.visualColumn;
   const resolved_syntax = Fancy.CommentDetection.GetCommentSyntaxForEditor(editor);
 
   const found = FindFancyCommentBlockUsingKnownSyntaxFirst(
@@ -164,28 +168,28 @@ export async function ExecuteMultiLineComment(): Promise<void> {
     const line_syntax =
       resolved_syntax?.singleLineEnd === ""
         ? resolved_syntax
-        : await _ProbeSingleLineCommentSyntax(editor, line, column, line_text);
+        : await _ProbeSingleLineCommentSyntax(editor, line, character_column, line_text);
     if (line_syntax) {
       const selection_is_empty = editor.selection.isEmpty;
       const text = selection_is_empty ? line_text.trim() : doc.getText(editor.selection).trim();
-      const indent = line_text.slice(0, column);
+      const indent = line_text.slice(0, character_column);
       const range = selection_is_empty
-        ? new vscode.Range(line, column, line, line_text.length)
+        ? new vscode.Range(line, character_column, line, line_text.length)
         : editor.selection;
       const replacement = selection_is_empty
-        ? _BuildBlockTailWithSeparator(line_syntax, indent, text, config, column)
-        : _BuildBlockWithSeparator(line_syntax, _GetIndent(line_text), text, config, column);
+        ? _BuildBlockTailWithSeparator(line_syntax, indent, text, config, visual_column)
+        : _BuildBlockWithSeparator(line_syntax, _GetIndent(line_text), text, config, visual_column);
 
       await editor.edit((builder) => builder.replace(range, replacement));
       if (selection_is_empty) {
-        _PlaceCursorInBlockBody(editor, line, column, line_syntax.multiLineMiddle.length);
+        _PlaceCursorInBlockBody(editor, line, character_column, line_syntax.multiLineMiddle.length);
       }
       return;
     }
   }
 
   if (ShouldUseVSCodeBlockComment(config.commentImplementation, editor.selection.isEmpty, resolved_syntax)) {
-    if (await _ApplyMultiLineViaVSCode(editor, line, column, line_text, config)) {
+    if (await _ApplyMultiLineViaVSCode(editor, line, character_column, visual_column, line_text, config)) {
       return;
     }
   }
@@ -196,19 +200,19 @@ export async function ExecuteMultiLineComment(): Promise<void> {
   }
 
   const text = editor.selection.isEmpty ? line_text.trim() : doc.getText(editor.selection).trim();
-  const indent = line_text.slice(0, column);
+  const indent = line_text.slice(0, character_column);
   const range = editor.selection.isEmpty
-    ? new vscode.Range(line, column, line, line_text.length)
+    ? new vscode.Range(line, character_column, line, line_text.length)
     : editor.selection;
   const replacement = editor.selection.isEmpty
-    ? _BuildBlockTailWithSeparator(resolved_syntax, indent, text, config, column)
-    : _BuildBlockWithSeparator(resolved_syntax, _GetIndent(line_text), text, config, column);
+    ? _BuildBlockTailWithSeparator(resolved_syntax, indent, text, config, visual_column)
+    : _BuildBlockWithSeparator(resolved_syntax, _GetIndent(line_text), text, config, visual_column);
 
   await editor.edit((builder) => {
     builder.replace(range, replacement);
   });
 
-  _PlaceCursorInBlockBody(editor, line, column, resolved_syntax.multiLineMiddle.length);
+  _PlaceCursorInBlockBody(editor, line, character_column, resolved_syntax.multiLineMiddle.length);
 }
 
 //
@@ -234,7 +238,7 @@ async function _ExecuteMultiCursorSingleLine(
 
   const replacements = _SelectedLines(editor).map((line) => {
     const line_text = editor.document.lineAt(line).text;
-    const column = _GetIndent(line_text).length;
+    const indent_position = GetIndentPosition(line_text, _GetIndent(line_text).length, _GetTabSize(editor));
     const parsed = ParseFancyCommentLine(
       line_text,
       InferFancyCommentLineSyntax(line_text, config) ?? syntax,
@@ -242,8 +246,8 @@ async function _ExecuteMultiCursorSingleLine(
     );
 
     return {
-      range: new vscode.Range(line, column, line, line_text.length),
-      value: parsed?.text ?? BuildCommentLine(syntax, line_text.trim(), config, column),
+      range: new vscode.Range(line, indent_position.character, line, line_text.length),
+      value: parsed?.text ?? BuildCommentLine(syntax, line_text.trim(), config, indent_position.visualColumn),
     };
   });
 
@@ -272,7 +276,7 @@ async function _ExecuteMultiCursorMultiLine(
 
   for (const line of _SelectedLines(editor)) {
     const line_text = document_lines[line];
-    const column = GetIndentColumn(line_text, 0);
+    const indent_position = GetIndentPosition(line_text, 0, _GetTabSize(editor));
     const found = FindFancyCommentBlockUsingKnownSyntaxFirst(document_lines, line, syntax, config);
 
     if (found) {
@@ -292,15 +296,15 @@ async function _ExecuteMultiCursorMultiLine(
       continue;
     }
 
-    const indent = line_text.slice(0, column);
+    const indent = line_text.slice(0, indent_position.character);
     replacements.push({
-      range: new vscode.Range(line, column, line, line_text.length),
+      range: new vscode.Range(line, indent_position.character, line, line_text.length),
       value: _BuildBlockTailWithSeparator(
         syntax,
         indent,
         line_text.trim(),
         config,
-        column
+        indent_position.visualColumn
       ),
     });
   }
@@ -329,18 +333,19 @@ async function _ExecuteMultiCursorMultiLine(
 async function _ApplySingleLineViaVSCode(
   editor: vscode.TextEditor,
   line: number,
-  column: number,
+  characterColumn: number,
+  visualColumn: number,
   originalLineText: string,
   config: FormattingConfig
 ): Promise<boolean> {
   const original_selection = editor.selection;
 
-  editor.selection = new vscode.Selection(line, column, line, originalLineText.length);
+  editor.selection = new vscode.Selection(line, characterColumn, line, originalLineText.length);
   await vscode.commands.executeCommand("editor.action.commentLine");
 
   const extracted = ExtractCommentedText(
-    editor.document.lineAt(line).text.slice(column),
-    originalLineText.slice(column)
+    editor.document.lineAt(line).text.slice(characterColumn),
+    originalLineText.slice(characterColumn)
   );
 
   if (!extracted) {
@@ -352,8 +357,8 @@ async function _ApplySingleLineViaVSCode(
   await _ReplaceLineTail(
     editor,
     line,
-    column,
-    BuildCommentLine(extracted.syntax, extracted.text, config, column),
+    characterColumn,
+    BuildCommentLine(extracted.syntax, extracted.text, config, visualColumn),
     { undoStopBefore: false, undoStopAfter: true }
   );
 
@@ -371,18 +376,19 @@ async function _ApplySingleLineViaVSCode(
 async function _ApplyMultiLineViaVSCode(
   editor: vscode.TextEditor,
   line: number,
-  column: number,
+  characterColumn: number,
+  visualColumn: number,
   originalLineText: string,
   config: FormattingConfig
 ): Promise<boolean> {
   const original_selection = editor.selection;
 
-  editor.selection = new vscode.Selection(line, column, line, originalLineText.length);
+  editor.selection = new vscode.Selection(line, characterColumn, line, originalLineText.length);
   await vscode.commands.executeCommand("editor.action.blockComment");
 
   const extracted = ExtractCommentedText(
-    editor.document.lineAt(line).text.slice(column),
-    originalLineText.slice(column)
+    editor.document.lineAt(line).text.slice(characterColumn),
+    originalLineText.slice(characterColumn)
   );
 
   if (!extracted || extracted.syntax.singleLineEnd.length === 0) {
@@ -391,16 +397,16 @@ async function _ApplyMultiLineViaVSCode(
   }
 
   await vscode.commands.executeCommand("undo");
-  const indent = originalLineText.slice(0, column);
+  const indent = originalLineText.slice(0, characterColumn);
   await _ReplaceLineTail(
     editor,
     line,
-    column,
-    _BuildBlockTailWithSeparator(extracted.syntax, indent, extracted.text, config, column),
+    characterColumn,
+    _BuildBlockTailWithSeparator(extracted.syntax, indent, extracted.text, config, visualColumn),
     { undoStopBefore: false, undoStopAfter: true }
   );
 
-  _PlaceCursorInBlockBody(editor, line, column, extracted.syntax.multiLineMiddle.length);
+  _PlaceCursorInBlockBody(editor, line, characterColumn, extracted.syntax.multiLineMiddle.length);
   return true;
 }
 
@@ -463,6 +469,12 @@ function _GetIndent(lineText: string): string {
   return lineText.match(/^\s*/)?.[0] ?? "";
 }
 
+// -----------------------------------------------------------------------------
+function _GetTabSize(editor: vscode.TextEditor): number {
+  const tabSize = editor.options.tabSize;
+  return typeof tabSize === "number" && Number.isFinite(tabSize) && tabSize > 0 ? tabSize : 4;
+}
+
 /** A fancy block is the block itself plus the separator line under it. */
 // -----------------------------------------------------------------------------
 function _BuildBlockWithSeparator(
@@ -470,9 +482,9 @@ function _BuildBlockWithSeparator(
   indent: string,
   text: string,
   config: FormattingConfig,
-  column: number
+  visualColumn: number
 ): string {
-  return BuildCommentBlockWithSeparator(syntax, indent, text, config, column);
+  return BuildCommentBlockWithSeparator(syntax, indent, text, config, visualColumn);
 }
 
 // The editor range retains `indent` before its start, so only newly created
@@ -484,9 +496,9 @@ function _BuildBlockTailWithSeparator(
   indent: string,
   text: string,
   config: FormattingConfig,
-  column: number
+  visualColumn: number
 ): string {
-  return BuildCommentBlockTailWithSeparator(syntax, indent, text, config, column);
+  return BuildCommentBlockTailWithSeparator(syntax, indent, text, config, visualColumn);
 }
 
 /**
@@ -511,11 +523,12 @@ async function _RewriteNativeBlock(
     config.nativeBlockDelimiters === "languageDefault" && languageSyntax
       ? languageSyntax
       : block.syntax;
+  const visual_column = GetIndentPosition(indent, indent.length, _GetTabSize(editor)).visualColumn;
 
   await editor.edit((builder) => {
     builder.replace(
       new vscode.Range(block.startLine, 0, last_line, editor.document.lineAt(last_line).text.length),
-      _BuildBlockWithSeparator(syntax, indent, block.text, config, indent.length)
+      _BuildBlockWithSeparator(syntax, indent, block.text, config, visual_column)
     );
   });
 }
