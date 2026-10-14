@@ -100,7 +100,9 @@ All settings are available in VS Code Settings UI under **Saturno FancyComments*
   "saturno-fancy-comments.separatorChar": "-",
   "saturno-fancy-comments.separatorPrefixLength": 3,
   "saturno-fancy-comments.separatorBlankLines": 0,
-  "saturno-fancy-comments.preferSingleLineComments": true
+  "saturno-fancy-comments.nativeBlockDelimiters": "preserve",
+  "saturno-fancy-comments.preferSingleLineComments": true,
+  "saturno-fancy-comments.commentImplementation": "vscode"
 }
 ```
 
@@ -110,7 +112,9 @@ All settings are available in VS Code Settings UI under **Saturno FancyComments*
 | `separatorChar` | `"-"` | Character used to fill separator lines (single char) |
 | `separatorPrefixLength` | `3` | Number of separator characters before the text (1-20) |
 | `separatorBlankLines` | `0` | Blank lines between the multiline comment block and its separator line (0-20) |
+| `nativeBlockDelimiters` | `preserve` | Keep an existing block's delimiters, or rewrite it using the language's default comment syntax |
 | `preferSingleLineComments` | `true` | Use line-comment syntax for new multiline comment blocks when the language supports it; block-only languages continue to use block comments |
+| `commentImplementation` | `vscode` | Use VS Code's built-in comment commands or FancyComments' internal syntax resolver |
 
 ### Examples with Different Configs
 
