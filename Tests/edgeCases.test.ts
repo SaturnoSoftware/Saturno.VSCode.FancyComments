@@ -6,7 +6,7 @@ import {
   ParseFancyCommentLine,
   ParseFancyCommentBlock,
   FindFancyCommentBlock,
-  GetIndentColumn,
+  GetIndentPosition,
   CommentSyntax,
   FormattingConfig,
   DEFAULT_CONFIG,
@@ -18,14 +18,6 @@ const cStyleSyntax: CommentSyntax = {
   multiLineStart: "/*",
   multiLineMiddle: "*",
   multiLineEnd: "*/",
-};
-
-const htmlStyleSyntax: CommentSyntax = {
-  singleLineStart: "<!--",
-  singleLineEnd: "-->",
-  multiLineStart: "<!--",
-  multiLineMiddle: " ",
-  multiLineEnd: "-->",
 };
 
 describe("BuildCommentLine - extreme inputs", () => {
@@ -355,50 +347,50 @@ describe("FindFancyCommentBlock - boundary conditions", () => {
   });
 });
 
-describe("GetIndentColumn - edge cases", () => {
+describe("GetIndentPosition - edge cases", () => {
   it("returns cursor position for empty string", () => {
-    const result = GetIndentColumn("", 0);
+    const result = GetIndentPosition("", 0).visualColumn;
     assert.strictEqual(result, 0);
   });
 
   it("returns cursor position for whitespace-only line", () => {
-    const result = GetIndentColumn("        ", 8);
+    const result = GetIndentPosition("        ", 8).visualColumn;
     assert.strictEqual(result, 8);
   });
 
   it("handles line with tabs", () => {
-    const result = GetIndentColumn("\t\tcode", 0);
-    assert.strictEqual(result, 2);
+    const result = GetIndentPosition("\t\tcode", 0).visualColumn;
+    assert.strictEqual(result, 8);
   });
 
   it("handles mixed tabs and spaces", () => {
-    const result = GetIndentColumn("  \t  code", 0);
-    assert.strictEqual(result, 5);
+    const result = GetIndentPosition("  \t  code", 0).visualColumn;
+    assert.strictEqual(result, 6);
   });
 
   it("handles zero cursor position", () => {
-    const result = GetIndentColumn("    code", 0);
+    const result = GetIndentPosition("    code", 0).visualColumn;
     assert.strictEqual(result, 4);
   });
 
   it("handles cursor beyond line length", () => {
-    const result = GetIndentColumn("  code", 100);
+    const result = GetIndentPosition("  code", 100).visualColumn;
     assert.strictEqual(result, 2);
   });
 
   it("handles negative cursor position", () => {
-    const result = GetIndentColumn("  code", -5);
+    const result = GetIndentPosition("  code", -5).visualColumn;
     assert.strictEqual(result, 2);
   });
 
   it("handles Unicode whitespace", () => {
-    const result = GetIndentColumn("\u00A0\u00A0code", 0);
+    const result = GetIndentPosition("\u00A0\u00A0code", 0).visualColumn;
     assert.strictEqual(result, 2);
   });
 
   it("handles extremely long indent", () => {
     const indent = " ".repeat(1000);
-    const result = GetIndentColumn(indent + "code", 0);
+    const result = GetIndentPosition(indent + "code", 0).visualColumn;
     assert.strictEqual(result, 1000);
   });
 });

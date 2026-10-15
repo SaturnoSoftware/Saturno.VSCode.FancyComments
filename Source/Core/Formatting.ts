@@ -132,11 +132,27 @@ export function BuildCommentBlockTailWithSeparator(
 }
 
 // -----------------------------------------------------------------------------
-export function GetIndentColumn(lineText: string, cursorCharacter: number): number {
-  if (lineText.trim().length === 0) {
-    return cursorCharacter;
+export interface IndentPosition {
+  character: number;
+  visualColumn: number;
+}
+
+/** Separates the editor character offset from the rendered indentation column. */
+export function GetIndentPosition(lineText: string, cursorCharacter: number, tabSize = 4): IndentPosition {
+  const character = lineText.trim().length === 0
+    ? Math.max(0, Math.min(lineText.length, Number.isFinite(cursorCharacter) ? Math.trunc(cursorCharacter) : 0))
+    : lineText.length - lineText.trimStart().length;
+  const normalizedTabSize = Number.isInteger(tabSize) && tabSize > 0 ? tabSize : 4;
+  const indent = lineText.slice(0, character);
+  let visualColumn = 0;
+
+  for (let index = 0; index < indent.length; index++) {
+    visualColumn += indent[index] === "\t"
+      ? normalizedTabSize - (visualColumn % normalizedTabSize)
+      : 1;
   }
-  return lineText.length - lineText.trimStart().length;
+
+  return { character, visualColumn };
 }
 
 //
